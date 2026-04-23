@@ -1,0 +1,50 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Data (store structure, not content)
+data/raw/*
+data/processed/*
+data/contracts/*
+data/cache/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/contracts/.gitkeep
+!data/cache/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic versions (track migrations)
+# alembic/versions/ — keep tracked
+
+# Models (large files)
+*.bin
+*.pt
+*.ckpt
