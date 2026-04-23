@@ -8,65 +8,91 @@ from src.ingestion.base import BaseScraper, RawDocument
 
 logger = logging.getLogger(__name__)
 
-SEC_RSS_RULES = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=rule&dateb=&owner=include&count=40&search_text=&output=atom"
-SEC_RSS_PROPOSED = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=proposed+rule&dateb=&owner=include&count=40&output=atom"
+# SEC press releases RSS — reliable, updated daily, covers Final Rules & Proposed Rules
+SEC_PRESS_RSS = "https://www.sec.gov/rss/news/press.xml"
+
+# Keywords that indicate a regulatory rule entry (not enforcement or corporate news)
+_RULE_KEYWORDS = [
+    "final rule", "proposed rule", "interim final rule",
+    "proposes rule", "adopting", "adopts",
+    "amends", "regulation", "rulemaking",
+]
+
+# Required header per SEC EDGAR terms of service
+_HEADERS = {
+    "User-Agent": "RegulatoryChangeAnalyzer/0.1 portfolio-project tavoriddler@gmail.com",
+    "Accept-Encoding": "gzip, deflate",
+}
 
 
 class SECScraper(BaseScraper):
-    """Scrapes SEC Final Rules and Proposed Rules via EDGAR RSS feeds."""
+    """Scrapes SEC Final Rules and Proposed Rules via the SEC press releases RSS feed."""
 
     source_name = "SEC"
 
-    _headers = {
-        "User-Agent": "RegulatoryChangeAnalyzer contact@example.com",
-        "Accept-Encoding": "gzip, deflate",
-    }
-
     async def fetch_latest(self) -> list[RawDocument]:
-        documents: list[RawDocument] = []
-        for feed_url in [SEC_RSS_RULES, SEC_RSS_PROPOSED]:
-            documents.extend(await self._fetch_feed(feed_url))
-        logger.info("SEC: found %d entries", len(documents))
-        return documents
-
-    async def _fetch_feed(self, feed_url: str) -> list[RawDocument]:
+        """Parse the SEC press release feed and return entries related to rulemaking."""
         try:
-            response = await self._get(feed_url, headers=self._headers)
+            response = await self._get(SEC_PRESS_RSS, headers=_HEADERS)
             feed = feedparser.parse(response.text)
         except Exception as exc:
-            logger.error("Failed to fetch SEC feed %s: %s", feed_url, exc)
+            logger.error("Failed to fetch SEC RSS: %s", exc)
             return []
 
-        results: list[RawDocument] = []
+        documents: list[RawDocument] = []
         for entry in feed.entries:
-            pub_date = self._parse_date(entry.get("updated", entry.get("published", "")))
-            doc = RawDocument(
-                external_id=f"SEC-{entry.get('id', '')[:100]}",
+            title = entry.get("title", "")
+            summary = entry.get("summary", entry.get("description", ""))
+            if not self._is_rule_entry(title, summary):
+                continue
+
+            pub_date = self._parse_date(entry.get("published", entry.get("updated", "")))
+            entry_id = entry.get("id", entry.get("link", ""))
+
+            documents.append(RawDocument(
+                external_id=f"SEC-{entry_id[-80:]}",
                 source=self.source_name,
-                title=entry.get("title", "No title"),
+                title=title,
                 url=entry.get("link", ""),
                 publication_date=pub_date or datetime.utcnow(),
-            )
-            results.append(doc)
-        return results
+                raw_text=BeautifulSoup(summary, "lxml").get_text(" ", strip=True) if summary else None,
+            ))
+
+        logger.info("SEC: %d rule-related entries found", len(documents))
+        return documents
 
     async def fetch_document_text(self, url: str) -> str:
-        """Fetch SEC rule page and extract filing text."""
+        """Download a SEC press release page and extract its main body text."""
         try:
-            response = await self._get(url, headers=self._headers)
+            response = await self._get(url, headers=_HEADERS)
             soup = BeautifulSoup(response.text, "lxml")
-            body = soup.find("div", class_="formContent") or soup.find("body")
+            # SEC press release pages wrap content in <div class="article-body"> or <article>
+            body = (
+                soup.find("div", class_="article-body")
+                or soup.find("article")
+                or soup.find("div", id="main-content")
+                or soup.find("body")
+            )
             return body.get_text(separator="\n", strip=True) if body else ""
         except Exception as exc:
             logger.error("Failed to fetch SEC document %s: %s", url, exc)
             return ""
 
     @staticmethod
+    def _is_rule_entry(title: str, summary: str) -> bool:
+        combined = (title + " " + summary).lower()
+        return any(kw in combined for kw in _RULE_KEYWORDS)
+
+    @staticmethod
     def _parse_date(date_str: str) -> datetime | None:
-        formats = ["%Y-%m-%dT%H:%M:%S%z", "%a, %d %b %Y %H:%M:%S %z"]
+        formats = [
+            "%a, %d %b %Y %H:%M:%S %z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%a, %d %b %Y %H:%M:%S GMT",
+        ]
         for fmt in formats:
             try:
-                return datetime.strptime(date_str, fmt)
+                return datetime.strptime(date_str.strip(), fmt)
             except ValueError:
                 continue
         return None

@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 # Keyword sets for rule-based classification (Sprint 2 baseline)
 _RULES: list[tuple[ChangeType, list[str]]] = [
     (ChangeType.repeal, ["deroga", "derogado", "repeal", "repealed", "abrogat"]),
-    (ChangeType.new_requirement, ["nuevo", "nueva", "adiciona", "new requirement", "shall now", "must"]),
+    (ChangeType.new_requirement, ["nuevo", "nueva", "adiciona", "new requirement", "shall now", "must", "deben", "deberán", "obligatorio", "obligatoria", "required to"]),
     (ChangeType.limit_modification, ["límite", "limite", "umbral", "threshold", "limit", "porcentaje", "percentage", "%"]),
     (ChangeType.deadline, ["plazo", "fecha límite", "deadline", "within", "no later than", "a más tardar"]),
     (ChangeType.clarification, ["aclara", "precisa", "clarif", "means", "defined as", "se entiende"]),

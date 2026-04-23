@@ -30,30 +30,29 @@ celery_app.conf.update(
 
 @celery_app.task(name="src.worker.scrape_all_sources")
 def scrape_all_sources() -> dict:
-    """Celery task: fetch latest documents from all configured sources."""
-    from src.ingestion.cnbv import CNBVScraper
-    from src.ingestion.sec import SECScraper
-    from src.database import AsyncSessionLocal
-    from src.models.document import RegulatoryDocument
+    """Celery task: fetch and persist latest documents from all configured sources."""
+    from src.database import AsyncSessionLocal, init_db
+    from src.services import ingestion_service
 
     async def _run() -> dict:
-        scrapers = [CNBVScraper(), SECScraper()]
-        total = 0
-        async with AsyncSessionLocal() as db:
-            for scraper in scrapers:
-                docs = await scraper.fetch_latest()
-                for raw_doc in docs:
-                    doc = RegulatoryDocument(
-                        external_id=raw_doc.external_id,
-                        source=raw_doc.source,
-                        title=raw_doc.title,
-                        url=raw_doc.url,
-                        publication_date=raw_doc.publication_date,
-                    )
-                    db.add(doc)
-                    total += 1
-                await scraper.close()
-            await db.commit()
-        return {"ingested": total}
+        await init_db()
+        totals: dict[str, int] = {"fetched": 0, "new": 0, "skipped": 0, "failed": 0}
+
+        for source in ingestion_service.SUPPORTED_SOURCES:
+            async with AsyncSessionLocal() as db:
+                result = await ingestion_service.run(source, db)
+                await db.commit()
+
+            totals["fetched"] += result.fetched
+            totals["new"] += result.new
+            totals["skipped"] += result.skipped
+            totals["failed"] += result.failed
+
+            logger.info(
+                "[%s] new=%d skipped=%d failed=%d",
+                result.source, result.new, result.skipped, result.failed,
+            )
+
+        return totals
 
     return asyncio.run(_run())

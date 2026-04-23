@@ -154,3 +154,43 @@ The **Regulatory Change Analyzer** is an automated tool designed to monitor, int
 ---
 
 **Note:** This document serves as an initial vision and scope statement. It can be refined during development sprints.
+
+---
+
+## Sprint Status
+
+```
+Sprint 1 — Foundation & Ingestion Engine   [x] Completado (2026-04-23)
+Sprint 2 — NLP & Change Detection         [ ] Pendiente
+Sprint 3 — Knowledge Base & Semantic Mapping [ ] Pendiente
+Sprint 4 — Recommendation Engine & UI Core  [ ] Pendiente
+Sprint 5 — Human-in-the-Loop & Export      [ ] Pendiente
+Sprint 6 — Integration & Final Polish      [ ] Pendiente
+```
+
+## Lecciones aprendidas — Sprint 1
+
+**`_SCRAPERS` dict captura la referencia de clase en tiempo de importación**
+`patch("src.services.ingestion_service.CNBVScraper")` parchea el nombre en el
+namespace del módulo, pero el dict `_SCRAPERS` ya tiene la referencia original.
+Regla: cuando el objeto a parchear vive en un dict de nivel de módulo, usar
+`patch.dict(svc._SCRAPERS, {"key": MockClass})` en lugar de parchear el nombre.
+
+**La aserción sobre un `patch.object` debe estar dentro del bloque `with`**
+Después de salir del `with`, el mock es restaurado a la función original.
+`svc.document_repo.create_from_raw.assert_called_once()` fuera del bloque
+falla con `AttributeError: 'function' object has no attribute 'assert_called_once'`.
+Regla: capturar el mock en una variable (`mock_fn = AsyncMock()`) y pasarlo
+como `new=mock_fn` para poder hacer aserciones después del bloque.
+
+**URL del feed SEC EDGAR era HTML, no Atom**
+`browse-edgar?output=atom` devuelve HTML en la práctica. El feed correcto es
+`https://www.sec.gov/rss/news/press.xml` (press releases), filtrado por keywords.
+
+**`external_id` basado en slice de URL produce colisiones**
+`entry.get('id', '')[:100]` puede truncar al mismo prefijo para URLs distintas.
+Usar `sha1(url.encode()).hexdigest()[:12]` garantiza unicidad con longitud fija.
+
+**PyMuPDF (AGPL) reemplazado por pypdf (MIT)**
+Para un portafolio público, ambos son viables, pero pypdf no requiere
+dependencias de sistema (`libmupdf-dev`) y su instalación es más simple.
