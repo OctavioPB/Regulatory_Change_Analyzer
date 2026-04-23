@@ -162,7 +162,7 @@ The **Regulatory Change Analyzer** is an automated tool designed to monitor, int
 ```
 Sprint 1 — Foundation & Ingestion Engine   [x] Completado (2026-04-23)
 Sprint 2 — NLP & Change Detection         [x] Completado (2026-04-23)
-Sprint 3 — Knowledge Base & Semantic Mapping [ ] Pendiente
+Sprint 3 — Knowledge Base & Semantic Mapping [x] Completado (2026-04-22)
 Sprint 4 — Recommendation Engine & UI Core  [ ] Pendiente
 Sprint 5 — Human-in-the-Loop & Export      [ ] Pendiente
 Sprint 6 — Integration & Final Polish      [ ] Pendiente
@@ -210,3 +210,28 @@ Valor correcto: `20` chars. Los números de página tienen ≤5 chars; las provi
 `extract_numeric_changes` con ventana de 80 chars: si la oración completa cabe en 80 chars,
 "20%" y "30%" tienen el mismo contexto → matching ambiguo → solo se detecta uno de los dos.
 Solución: zip por posición (N-ésimo % en old ↔ N-ésimo % en new). Más simple y correcto.
+
+## Lecciones aprendidas — Sprint 3
+
+**Regex plurales en el rules engine: `fondos? de inversión` no es lo mismo que `fondo de inversión`**
+El patrón `\bfondo de inversión\b` no coincide con "fondos de inversión" porque `fondos` ≠ `fondo`.
+Regla: al escribir patrones para nombres de entidades en español, incluir variantes de plural/singular
+con `s?` o alternativas explícitas. Verificar con el texto exacto de los tests antes de declarar el patrón correcto.
+
+**Deduplicación entre semantic mapper y rules engine es responsabilidad del servicio, no del mapper**
+El `find_similar_clauses()` devuelve matches por nombre de contrato. El rules engine devuelve contratos
+por tipo/área. Si un contrato aparece en ambas rutas, se generaría un `ImpactItem` duplicado.
+Solución: en `impact_service`, construir `clause_contract_names = {m.contract_name for m in clause_matches}`
+y filtrar los contratos del rules engine que ya estén cubiertos. El mapper y el engine son stateless
+y no deben conocerse entre sí.
+
+**`patch("src.services.impact_service._HAS_SEMANTIC", False)` es el patrón correcto para desactivar embedding**
+El flag `_HAS_SEMANTIC` se resuelve en tiempo de importación del módulo (try/except en nivel de módulo).
+Para tests que no requieren sentence-transformers, hacer `patch` sobre el bool es suficiente — no es
+necesario parchear la función `find_similar_clauses` directamente cuando el código tiene `if _HAS_SEMANTIC`.
+
+**`selectinload` es necesario cuando se accede a relaciones lazy desde un contexto async**
+`change.document` cargado sin `selectinload` en un contexto async lanza `MissingGreenlet` o devuelve
+`None` porque SQLAlchemy lazy-loading requiere un contexto síncrono.
+Regla: en cualquier query async que necesite acceder a relaciones ORM, agregar
+`.options(selectinload(Model.relation))` explícitamente en la query.
