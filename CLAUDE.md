@@ -161,7 +161,7 @@ The **Regulatory Change Analyzer** is an automated tool designed to monitor, int
 
 ```
 Sprint 1 — Foundation & Ingestion Engine   [x] Completado (2026-04-23)
-Sprint 2 — NLP & Change Detection         [ ] Pendiente
+Sprint 2 — NLP & Change Detection         [x] Completado (2026-04-23)
 Sprint 3 — Knowledge Base & Semantic Mapping [ ] Pendiente
 Sprint 4 — Recommendation Engine & UI Core  [ ] Pendiente
 Sprint 5 — Human-in-the-Loop & Export      [ ] Pendiente
@@ -194,3 +194,19 @@ Usar `sha1(url.encode()).hexdigest()[:12]` garantiza unicidad con longitud fija.
 **PyMuPDF (AGPL) reemplazado por pypdf (MIT)**
 Para un portafolio público, ambos son viables, pero pypdf no requiere
 dependencias de sistema (`libmupdf-dev`) y su instalación es más simple.
+
+## Lecciones aprendidas — Sprint 2
+
+**`_SIMILARITY_THRESHOLD = 0.30` filtra cambios regulatorios reales**
+Cambiar "20%" → "15%" en una sección de 40 chars produce `change_ratio ≈ 0.05`.
+Con umbral en 0.30, el artículo modificado no se reportaba como cambiado.
+Valor correcto: `0.02`. En compliance, incluso un 2% de cambio en el texto es significativo.
+
+**`_MIN_SECTION_LENGTH = 60` descarta provisiones legítimas cortas**
+"El límite es del 15%." tiene 24 chars — se filtraba como ruido.
+Valor correcto: `20` chars. Los números de página tienen ≤5 chars; las provisiones reales, ≥20.
+
+**Matching de cambios numéricos: posicional > contextual**
+`extract_numeric_changes` con ventana de 80 chars: si la oración completa cabe en 80 chars,
+"20%" y "30%" tienen el mismo contexto → matching ambiguo → solo se detecta uno de los dos.
+Solución: zip por posición (N-ésimo % en old ↔ N-ésimo % en new). Más simple y correcto.
