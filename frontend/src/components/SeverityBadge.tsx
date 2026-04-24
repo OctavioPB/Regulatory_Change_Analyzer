@@ -1,16 +1,19 @@
 import type { Severity } from "../api/client";
 
-const styles: Record<Severity, string> = {
-  high: "bg-red-100 text-red-700 ring-red-200",
-  medium: "bg-amber-100 text-amber-700 ring-amber-200",
-  low: "bg-green-100 text-green-700 ring-green-200",
+const styles: Record<Severity, { bg: string; text: string; dot: string }> = {
+  high:   { bg: "#FDEAEA", text: "#7A1020", dot: "#E03448" },
+  medium: { bg: "#FEF0E6", text: "#7A3800", dot: "#F07020" },
+  low:    { bg: "#E0F7EF", text: "#0D5C3A", dot: "#27B97C" },
 };
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
+  const s = styles[severity];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${styles[severity]}`}
+      className="opb-badge"
+      style={{ background: s.bg, color: s.text }}
     >
+      <span className="opb-badge-dot" style={{ background: s.dot }} />
       {severity.toUpperCase()}
     </span>
   );

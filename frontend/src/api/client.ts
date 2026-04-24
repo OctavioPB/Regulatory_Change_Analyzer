@@ -133,6 +133,17 @@ export const api = {
       request<{ detail: string }>("/ingest/", { method: "POST" }),
   },
 
+  pipeline: {
+    ingest: (source?: string) =>
+      source
+        ? request<{ detail: string }>(`/ingest/${source}`, { method: "POST" })
+        : request<{ detail: string }>("/ingest/", { method: "POST" }),
+    analyze: () =>
+      request<{ detail: string }>("/ingest/analyze", { method: "POST" }),
+    mapImpacts: () =>
+      request<{ detail: string }>("/ingest/map", { method: "POST" }),
+  },
+
   export: {
     alertXlsx: (alertId: string) => `${BASE}/export/alerts/${alertId}.xlsx`,
     alertPdf: (alertId: string) => `${BASE}/export/alerts/${alertId}.pdf`,

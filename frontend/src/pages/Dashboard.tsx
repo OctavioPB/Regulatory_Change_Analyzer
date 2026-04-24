@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { Bell, FileText, AlertTriangle, ClipboardCheck } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { api, type DashboardStats, type ImpactAlert } from "../api/client";
 import { StatsCard } from "../components/StatsCard";
 import { AlertsTable } from "../components/AlertsTable";
 import { AlertDrawer } from "../components/AlertDrawer";
+
+const seriesColors = ["#003366", "#27B97C", "#7C4DBD", "#F07020", "#E05080"];
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -26,132 +28,161 @@ export function Dashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   function handleSelect(alert: ImpactAlert) {
     setSelected(alert);
-    // Optimistically mark as read in the list
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === alert.id ? { ...a, is_read: true } : a))
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-gray-400">
-        Loading…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500">
-        <AlertTriangle size={32} className="text-red-400" />
-        <p className="text-sm">{error}</p>
-        <button
-          onClick={load}
-          className="rounded-md bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700"
-        >
-          Retry
-        </button>
-      </div>
-    );
+    setAlerts((prev) => prev.map((a) => (a.id === alert.id ? { ...a, is_read: true } : a)));
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-        <button
-          onClick={load}
-          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50"
+    <div className="flex flex-col">
+      {/* Hero */}
+      <div className="hero-bg px-8 py-5">
+        <h1
+          className="font-display text-white"
+          style={{ fontSize: "32px", fontWeight: 400 }}
         >
-          Refresh
-        </button>
+          Regulatory{" "}
+          <em className="italic" style={{ color: "var(--gold-light)" }}>Intelligence</em>
+        </h1>
+        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+          Live view of monitored sources, detected changes, and pending compliance actions.
+        </p>
       </div>
 
-      {/* Stats cards */}
-      {stats && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatsCard
-            label="Total Documents"
-            value={stats.documents.total}
-            sub={Object.entries(stats.documents.by_source)
-              .map(([s, n]) => `${s}: ${n}`)
-              .join(" · ")}
-            icon={FileText}
-            accent="blue"
-          />
-          <StatsCard
-            label="Regulatory Changes"
-            value={stats.changes.total}
-            sub={`${stats.changes.by_type["limit_modification"] ?? 0} limit modifications`}
-            icon={AlertTriangle}
-            accent="amber"
-          />
-          <StatsCard
-            label="Unread Alerts"
-            value={stats.alerts.unread}
-            sub={`${stats.alerts.total} total alerts`}
-            icon={Bell}
-            accent="red"
-          />
-          <StatsCard
-            label="Pending Reviews"
-            value={stats.impact_items.pending_review}
-            sub={`${stats.impact_items.total} total items`}
-            icon={ClipboardCheck}
-            accent="green"
-          />
-        </div>
-      )}
+      <div className="section-divider" />
 
-      {/* Severity breakdown */}
-      {stats && stats.impact_items.total > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Impact items by severity</p>
-          <div className="flex gap-4">
-            {(["high", "medium", "low"] as const).map((sev) => {
-              const count = stats.impact_items.by_severity[sev] ?? 0;
-              const total = stats.impact_items.total;
-              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-              const colors = {
-                high: "bg-red-500",
-                medium: "bg-amber-400",
-                low: "bg-green-400",
-              };
-              return (
-                <div key={sev} className="flex items-center gap-2 text-sm">
-                  <div className={`h-3 w-3 rounded-full ${colors[sev]}`} />
-                  <span className="text-gray-600 capitalize">{sev}</span>
-                  <span className="font-semibold text-gray-900">{count}</span>
-                  <span className="text-gray-400">({pct}%)</span>
+      {loading ? (
+        <div className="flex items-center justify-center py-24 font-body" style={{ color: "var(--mid)" }}>
+          Loading…
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-24">
+          <AlertTriangle size={28} style={{ color: "#E03448" }} />
+          <p className="font-body" style={{ fontSize: "14px", color: "var(--mid)" }}>{error}</p>
+          <button
+            onClick={load}
+            className="rounded-lg px-4 py-1.5 font-body font-medium text-white"
+            style={{ background: "var(--primary)", fontSize: "13px" }}
+          >
+            Retry →
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8 px-8 py-8">
+          {/* KPI row */}
+          <div>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="eyebrow mb-1.5">Key metrics</p>
+                <p className="font-body" style={{ fontSize: "13px", color: "var(--mid)" }}>
+                  Live totals across all monitored regulatory sources and your document inventory.
+                </p>
+              </div>
+              <button
+                onClick={load}
+                className="font-body font-medium transition-colors hover:text-primary"
+                style={{ fontSize: "12px", color: "var(--mid)" }}
+              >
+                Refresh →
+              </button>
+            </div>
+            {stats && (
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <StatsCard
+                  label="Total Documents"
+                  value={stats.documents.total}
+                  sub={Object.entries(stats.documents.by_source).map(([s, n]) => `${s}: ${n}`).join(" · ")}
+                />
+                <StatsCard
+                  label="Regulatory Changes"
+                  value={stats.changes.total}
+                  sub={`${stats.changes.by_type["limit_modification"] ?? 0} limit modifications`}
+                />
+                <StatsCard
+                  label="Unread Alerts"
+                  value={stats.alerts.unread}
+                  sub={`${stats.alerts.total} total alerts`}
+                />
+                <StatsCard
+                  label="Pending Reviews"
+                  value={stats.impact_items.pending_review}
+                  sub={`${stats.impact_items.total} total items`}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="section-divider" />
+
+          {/* Severity breakdown */}
+          {stats && stats.impact_items.total > 0 && (
+            <>
+              <div>
+                <p className="eyebrow mb-1.5">Impact distribution</p>
+                <p className="font-body mb-4" style={{ fontSize: "13px", color: "var(--mid)" }}>
+                  Proportion of active impact items grouped by severity rating.
+                </p>
+                <div className="rounded-xl bg-white p-6 shadow-sm" style={{ border: "1px solid var(--primary-10)" }}>
+                  <div className="flex flex-col gap-3">
+                    {(["high", "medium", "low"] as const).map((sev, i) => {
+                      const count = stats.impact_items.by_severity[sev] ?? 0;
+                      const total = stats.impact_items.total;
+                      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                      const color = seriesColors[i === 0 ? 4 : i === 1 ? 3 : 1];
+                      return (
+                        <div key={sev} className="flex items-center gap-3">
+                          <span
+                            className="opb-label w-16 shrink-0"
+                            style={{ color: "var(--mid)" }}
+                          >
+                            {sev.toUpperCase()}
+                          </span>
+                          <div
+                            className="flex-1 rounded"
+                            style={{ background: "var(--light)", height: "20px" }}
+                          >
+                            <div
+                              className="h-full rounded flex items-center justify-end pr-2"
+                              style={{ width: `${pct}%`, background: color, minWidth: count > 0 ? "2rem" : 0 }}
+                            >
+                              {pct > 0 && (
+                                <span style={{ color: "#fff", fontSize: "10px", fontFamily: "var(--fb)" }}>
+                                  {pct}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-display w-8 text-right" style={{ fontSize: "18px", fontWeight: 300, color: "var(--dark)" }}>
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+              <div className="section-divider" />
+            </>
+          )}
+
+          {/* Alerts feed */}
+          <div>
+            <p className="eyebrow mb-1.5">Recent alerts</p>
+            <p className="font-body mb-4" style={{ fontSize: "13px", color: "var(--mid)" }}>
+              The twenty most recent alerts generated from detected regulatory changes.
+            </p>
+            <AlertsTable alerts={alerts.slice(0, 20)} onSelect={handleSelect} />
           </div>
         </div>
       )}
 
-      {/* Alerts feed */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Recent Alerts</h2>
-        <AlertsTable alerts={alerts.slice(0, 20)} onSelect={handleSelect} />
-      </div>
-
-      {/* Detail drawer */}
       {selected && (
         <AlertDrawer
           alert={selected}
           onClose={() => setSelected(null)}
-          onReviewed={() => {
-            setSelected(null);
-            load();
-          }}
+          onReviewed={() => { setSelected(null); load(); }}
         />
       )}
     </div>

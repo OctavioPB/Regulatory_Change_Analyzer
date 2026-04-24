@@ -25,9 +25,7 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
     setLoading(true);
     try {
       await api.alerts.review(
-        alert.id,
-        item.id,
-        status,
+        alert.id, item.id, status,
         reviewing?.itemId === item.id ? reviewing.notes : undefined
       );
       onReviewed();
@@ -39,18 +37,26 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      {/* Drawer panel */}
       <div className="relative z-10 flex w-full max-w-2xl flex-col bg-white shadow-2xl">
+        {/* Top accent bar */}
+        <div className="accent-bar" />
+
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
+        <div
+          className="px-6 py-4 flex items-start justify-between"
+          style={{ borderBottom: "1px solid var(--primary-10)" }}
+        >
           <div className="flex-1 pr-4">
-            <h2 className="text-base font-semibold text-gray-900 leading-snug">
+            <p className="eyebrow mb-1">Impact Detail</p>
+            <h2
+              className="font-display leading-snug"
+              style={{ fontSize: "18px", fontWeight: 400, color: "var(--dark)" }}
+            >
               {alert.title}
             </h2>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 font-body" style={{ fontSize: "12px", color: "var(--mid)" }}>
               {new Date(alert.created_at).toLocaleString()} · {alert.items.length} impact item
               {alert.items.length !== 1 ? "s" : ""}
             </p>
@@ -59,32 +65,35 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
             <a
               href={api.export.alertXlsx(alert.id)}
               download
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600"
+              className="rounded-md p-1.5 transition-colors hover:bg-opb-light"
+              style={{ color: "var(--mid)" }}
               title="Download Excel"
             >
-              <Download size={16} />
+              <Download size={15} />
             </a>
             <a
               href={api.export.alertPdf(alert.id)}
               download
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+              className="rounded-md p-1.5 transition-colors hover:bg-opb-light"
+              style={{ color: "var(--mid)" }}
               title="Download PDF"
             >
-              <Download size={16} />
+              <Download size={15} />
             </a>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="rounded-md p-1.5 transition-colors hover:bg-opb-light ml-1"
+              style={{ color: "var(--mid)" }}
             >
-              <X size={18} />
+              <X size={17} />
             </button>
           </div>
         </div>
 
-        {/* Items list */}
+        {/* Items */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {alert.items.length === 0 && (
-            <p className="text-center text-sm text-gray-400 py-10">
+            <p className="text-center py-10 font-body" style={{ color: "var(--mid)", fontSize: "14px" }}>
               No impact items for this alert.
             </p>
           )}
@@ -92,49 +101,59 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
           {alert.items.map((item) => (
             <div
               key={item.id}
-              className="rounded-lg border border-gray-200 bg-gray-50"
+              className="rounded-xl overflow-hidden"
+              style={{ border: "1px solid var(--primary-10)" }}
             >
-              {/* Item header */}
               <button
-                className="flex w-full items-center justify-between px-4 py-3 text-left"
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-opb-light"
                 onClick={() => setExpanded(expanded === item.id ? null : item.id)}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
                   <SeverityBadge severity={item.severity} />
                   <StatusBadge status={item.approval_status} />
-                  <span className="text-sm font-medium text-gray-800">
+                  <span className="font-body font-medium" style={{ fontSize: "14px", color: "var(--dark)" }}>
                     {item.affected_name}
                   </span>
                   {item.affected_ref && (
-                    <span className="text-xs text-gray-400">· {item.affected_ref}</span>
+                    <span className="font-body" style={{ fontSize: "12px", color: "var(--mid)" }}>
+                      · {item.affected_ref}
+                    </span>
                   )}
                 </div>
-                {expanded === item.id ? (
-                  <ChevronUp size={14} className="text-gray-400 shrink-0" />
-                ) : (
-                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
-                )}
+                {expanded === item.id
+                  ? <ChevronUp size={13} style={{ color: "var(--mid)" }} className="shrink-0" />
+                  : <ChevronDown size={13} style={{ color: "var(--mid)" }} className="shrink-0" />}
               </button>
 
-              {/* Expanded suggestion + actions */}
               {expanded === item.id && (
-                <div className="border-t border-gray-200 px-4 pb-4 pt-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
-                    Suggestion
+                <div
+                  className="px-4 pb-4 pt-3"
+                  style={{ borderTop: "1px solid var(--primary-10)", background: "var(--primary-10)" }}
+                >
+                  <p className="opb-label text-opb-mid mb-1.5">Suggested action</p>
+                  <p className="font-body" style={{ fontSize: "14px", color: "var(--dark)", lineHeight: "1.7" }}>
+                    {item.suggestion}
                   </p>
-                  <p className="text-sm text-gray-700 leading-relaxed">{item.suggestion}</p>
 
                   {item.reviewer_notes && (
-                    <div className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                    <div
+                      className="mt-3 rounded-lg px-3 py-2 font-body"
+                      style={{ background: "var(--primary-10)", fontSize: "13px", color: "var(--primary-80)" }}
+                    >
                       <span className="font-semibold">Notes: </span>
                       {item.reviewer_notes}
                     </div>
                   )}
 
-                  {/* Notes input when modifying */}
                   {reviewing?.itemId === item.id && (
                     <textarea
-                      className="mt-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="mt-3 w-full rounded-lg px-3 py-2 font-body focus:outline-none"
+                      style={{
+                        border: "1px solid var(--primary-30)",
+                        fontSize: "13px",
+                        background: "var(--white)",
+                        color: "var(--dark)",
+                      }}
                       rows={2}
                       placeholder="Reviewer notes (optional)"
                       value={reviewing.notes}
@@ -142,16 +161,15 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
                     />
                   )}
 
-                  {/* Action buttons */}
                   {item.approval_status === "pending" && (
                     <div className="mt-3 flex gap-2">
                       <button
                         disabled={loading}
                         onClick={() => submitReview(item, "approved")}
-                        className="flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
+                        style={{ background: "#27B97C", color: "#fff", fontSize: "12px" }}
                       >
-                        <CheckCircle size={13} />
-                        Approve
+                        <CheckCircle size={12} /> Approve
                       </button>
                       <button
                         disabled={loading}
@@ -160,18 +178,19 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
                             ? submitReview(item, "modified")
                             : setReviewing({ itemId: item.id, notes: "" })
                         }
-                        className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
+                        style={{ background: "var(--primary)", color: "#fff", fontSize: "12px" }}
                       >
-                        <Pencil size={13} />
+                        <Pencil size={12} />
                         {reviewing?.itemId === item.id ? "Save" : "Modify"}
                       </button>
                       <button
                         disabled={loading}
                         onClick={() => submitReview(item, "rejected")}
-                        className="flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
+                        style={{ background: "#E03448", color: "#fff", fontSize: "12px" }}
                       >
-                        <XCircle size={13} />
-                        Reject
+                        <XCircle size={12} /> Reject
                       </button>
                     </div>
                   )}

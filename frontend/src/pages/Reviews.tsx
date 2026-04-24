@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { CheckCircle, XCircle, Pencil, ClipboardCheck } from "lucide-react";
+import { CheckCircle, XCircle, Pencil } from "lucide-react";
 import { api, type ApprovalStatus, type ImpactAlert, type ImpactItem } from "../api/client";
 import { SeverityBadge } from "../components/SeverityBadge";
 import { StatusBadge } from "../components/StatusBadge";
@@ -22,9 +22,7 @@ export function Reviews() {
       const items: PendingItem[] = [];
       for (const alert of alerts) {
         for (const item of alert.items) {
-          if (item.approval_status === "pending") {
-            items.push({ alert, item });
-          }
+          if (item.approval_status === "pending") items.push({ alert, item });
         }
       }
       setPending(items);
@@ -33,9 +31,7 @@ export function Reviews() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   async function review(p: PendingItem, status: ApprovalStatus) {
     setSubmitting(p.item.id);
@@ -48,81 +44,132 @@ export function Reviews() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex items-center gap-3">
-        <ClipboardCheck size={20} className="text-blue-600" />
-        <h1 className="text-xl font-bold text-gray-900">Pending Reviews</h1>
-        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-          {pending.length}
-        </span>
+    <div className="flex flex-col">
+      {/* Hero */}
+      <div className="hero-bg px-8 py-5">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+            Pending{" "}
+            <em className="italic" style={{ color: "var(--gold-light)" }}>Reviews</em>
+          </h1>
+          {!loading && (
+            <span
+              className="opb-badge"
+              style={{ background: "var(--gold)", color: "#fff", fontWeight: 600 }}
+            >
+              {pending.length}
+            </span>
+          )}
+        </div>
+        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+          Approve, modify, or reject each suggested compliance action.
+        </p>
       </div>
 
-      {loading ? (
-        <p className="text-center text-sm text-gray-400 py-12">Loading…</p>
-      ) : pending.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 py-16 text-center text-gray-400">
-          <CheckCircle size={32} className="mx-auto mb-2 text-green-400" />
-          All impact items have been reviewed.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {pending.map((p) => (
-            <div
-              key={p.item.id}
-              className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-            >
-              {/* Context header */}
-              <p className="text-xs text-gray-400 mb-2 truncate">{p.alert.title}</p>
+      <div className="section-divider" />
 
-              {/* Item info */}
-              <div className="flex items-center gap-2 mb-2">
-                <SeverityBadge severity={p.item.severity} />
-                <StatusBadge status={p.item.approval_status} />
-                <span className="text-sm font-medium text-gray-800">{p.item.affected_name}</span>
-                {p.item.affected_ref && (
-                  <span className="text-xs text-gray-400">· {p.item.affected_ref}</span>
-                )}
+      <div className="px-8 py-8 flex flex-col gap-6">
+        <p className="eyebrow mb-1.5">Action items</p>
+        <p className="font-body mb-2" style={{ fontSize: "13px", color: "var(--mid)" }}>
+          Approve each suggestion as-is, modify it before accepting, or reject it entirely.
+        </p>
+
+        {loading ? (
+          <p className="text-center py-12 font-body" style={{ color: "var(--mid)", fontSize: "14px" }}>
+            Loading…
+          </p>
+        ) : pending.length === 0 ? (
+          <div
+            className="rounded-xl py-16 text-center font-body"
+            style={{ border: "1px dashed var(--primary-30)" }}
+          >
+            <CheckCircle size={28} className="mx-auto mb-3" style={{ color: "#27B97C" }} />
+            <p style={{ color: "var(--mid)", fontSize: "14px" }}>
+              All impact items have been reviewed.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pending.map((p) => (
+              <div
+                key={p.item.id}
+                className="rounded-xl bg-white shadow-sm overflow-hidden"
+                style={{ border: "1px solid var(--primary-10)" }}
+              >
+                <div className="accent-bar" />
+                <div className="px-5 py-4">
+                  {/* Alert context */}
+                  <p
+                    className="font-body mb-2 truncate"
+                    style={{ fontSize: "11px", color: "var(--mid)", letterSpacing: "0.3px" }}
+                  >
+                    {p.alert.title}
+                  </p>
+
+                  {/* Item info */}
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <SeverityBadge severity={p.item.severity} />
+                    <StatusBadge status={p.item.approval_status} />
+                    <span className="font-body font-medium" style={{ fontSize: "14px", color: "var(--dark)" }}>
+                      {p.item.affected_name}
+                    </span>
+                    {p.item.affected_ref && (
+                      <span className="font-body" style={{ fontSize: "12px", color: "var(--mid)" }}>
+                        · {p.item.affected_ref}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="font-body mb-4" style={{ fontSize: "14px", color: "var(--dark)", lineHeight: "1.7" }}>
+                    {p.item.suggestion}
+                  </p>
+
+                  <textarea
+                    className="w-full rounded-lg px-3 py-2 font-body mb-3 focus:outline-none"
+                    style={{
+                      border: "1px solid var(--primary-30)",
+                      fontSize: "13px",
+                      background: "var(--primary-10)",
+                      color: "var(--dark)",
+                    }}
+                    rows={2}
+                    placeholder="Reviewer notes (optional)"
+                    value={notes[p.item.id] ?? ""}
+                    onChange={(e) => setNotes((prev) => ({ ...prev, [p.item.id]: e.target.value }))}
+                  />
+
+                  <div className="flex gap-2">
+                    <button
+                      disabled={submitting === p.item.id}
+                      onClick={() => review(p, "approved")}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
+                      style={{ background: "#27B97C", color: "#fff", fontSize: "12px" }}
+                    >
+                      <CheckCircle size={12} /> Approve
+                    </button>
+                    <button
+                      disabled={submitting === p.item.id}
+                      onClick={() => review(p, "modified")}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
+                      style={{ background: "var(--primary)", color: "#fff", fontSize: "12px" }}
+                    >
+                      <Pencil size={12} /> Modify & Accept
+                    </button>
+                    <button
+                      disabled={submitting === p.item.id}
+                      onClick={() => review(p, "rejected")}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
+                      style={{ background: "#E03448", color: "#fff", fontSize: "12px" }}
+                    >
+                      <XCircle size={12} /> Reject
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">{p.item.suggestion}</p>
-
-              {/* Notes */}
-              <textarea
-                className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
-                rows={2}
-                placeholder="Reviewer notes (optional)"
-                value={notes[p.item.id] ?? ""}
-                onChange={(e) => setNotes((prev) => ({ ...prev, [p.item.id]: e.target.value }))}
-              />
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  disabled={submitting === p.item.id}
-                  onClick={() => review(p, "approved")}
-                  className="flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                >
-                  <CheckCircle size={13} /> Approve
-                </button>
-                <button
-                  disabled={submitting === p.item.id}
-                  onClick={() => review(p, "modified")}
-                  className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  <Pencil size={13} /> Modify & Accept
-                </button>
-                <button
-                  disabled={submitting === p.item.id}
-                  onClick={() => review(p, "rejected")}
-                  className="flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                >
-                  <XCircle size={13} /> Reject
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

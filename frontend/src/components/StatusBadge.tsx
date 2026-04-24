@@ -1,18 +1,28 @@
 import type { ApprovalStatus } from "../api/client";
 
-const styles: Record<ApprovalStatus, string> = {
-  pending: "bg-gray-100 text-gray-600 ring-gray-200",
-  approved: "bg-green-100 text-green-700 ring-green-200",
-  modified: "bg-blue-100 text-blue-700 ring-blue-200",
-  rejected: "bg-red-100 text-red-700 ring-red-200",
+const styles: Record<ApprovalStatus, { bg: string; text: string; dot: string }> = {
+  pending:  { bg: "#FEF0E6", text: "#7A3800", dot: "#F07020" },
+  approved: { bg: "#E0F7EF", text: "#0D5C3A", dot: "#27B97C" },
+  modified: { bg: "#F0EBF9", text: "#3D1F70", dot: "#7C4DBD" },
+  rejected: { bg: "#FDEAEA", text: "#7A1020", dot: "#E03448" },
+};
+
+const labels: Record<ApprovalStatus, string> = {
+  pending:  "Pending",
+  approved: "Approved",
+  modified: "Modified",
+  rejected: "Rejected",
 };
 
 export function StatusBadge({ status }: { status: ApprovalStatus }) {
+  const s = styles[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${styles[status]}`}
+      className="opb-badge"
+      style={{ background: s.bg, color: s.text }}
     >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className="opb-badge-dot" style={{ background: s.dot }} />
+      {labels[status]}
     </span>
   );
 }
