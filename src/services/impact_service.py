@@ -20,7 +20,7 @@ from src.mapping.rules_engine import RuleMatch, apply_rules, contracts_targeted_
 from src.models.document import RegulatoryChange, RegulatoryDocument
 from src.models.impact import ImpactItem, Severity
 from src.recommendations.generator import generate_suggestion
-from src.repositories import contract_repo, impact_repo
+from src.repositories import audit_repo, contract_repo, impact_repo
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +167,13 @@ async def map_change_to_contracts(
         )
         items_created += 1
 
+    await audit_repo.log(
+        db,
+        action="impact_alert_created",
+        entity_type="ImpactAlert",
+        entity_id=str(alert.id),
+        detail=f"change_id={change_id} items={items_created}",
+    )
     await db.commit()
 
     logger.info(

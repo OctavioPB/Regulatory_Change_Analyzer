@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.document import RegulatoryChange, RegulatoryDocument
 from src.nlp.pipeline import AnalysisResult, SectionChange, analyze
+from src.repositories import audit_repo
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,13 @@ async def analyze_document(document_id: uuid.UUID, db: AsyncSession) -> NlpResul
         db.add(orm_record)
         count += 1
 
+    await audit_repo.log(
+        db,
+        action="document_analyzed",
+        entity_type="RegulatoryDocument",
+        entity_id=str(document_id),
+        detail=f"changes_created={count} source={doc.source}",
+    )
     logger.info("Document %s → %d RegulatoryChange records created", document_id, count)
     return NlpResult(document_id=document_id, changes_created=count)
 

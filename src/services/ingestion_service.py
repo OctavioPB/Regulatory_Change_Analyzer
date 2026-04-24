@@ -7,7 +7,7 @@ from src.ingestion.base import BaseScraper, RawDocument
 from src.ingestion.cnbv import CNBVScraper
 from src.ingestion.sec import SECScraper
 from src.parsing.pdf_parser import extract_text_from_pdf_bytes
-from src.repositories import document_repo
+from src.repositories import audit_repo, document_repo
 from src.storage.local_storage import save_processed_text, save_raw_file
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,14 @@ async def _process_one(
         result.failed += 1
         return False
 
-    await document_repo.create_from_raw(db, raw_doc, raw_text=raw_text, file_path=file_path_str)
+    doc = await document_repo.create_from_raw(db, raw_doc, raw_text=raw_text, file_path=file_path_str)
+    await audit_repo.log(
+        db,
+        action="document_ingested",
+        entity_type="RegulatoryDocument",
+        entity_id=str(doc.id),
+        detail=f"source={raw_doc.source} external_id={raw_doc.external_id}",
+    )
     return True
 
 

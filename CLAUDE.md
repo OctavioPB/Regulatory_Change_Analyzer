@@ -164,7 +164,7 @@ Sprint 1 — Foundation & Ingestion Engine   [x] Completado (2026-04-23)
 Sprint 2 — NLP & Change Detection         [x] Completado (2026-04-23)
 Sprint 3 — Knowledge Base & Semantic Mapping [x] Completado (2026-04-22)
 Sprint 4 — Recommendation Engine & UI Core  [x] Completado (2026-04-24)
-Sprint 5 — Human-in-the-Loop & Export      [ ] Pendiente
+Sprint 5 — Human-in-the-Loop & Export      [x] Completado (2026-04-24)
 Sprint 6 — Integration & Final Polish      [ ] Pendiente
 ```
 
@@ -235,3 +235,32 @@ necesario parchear la función `find_similar_clauses` directamente cuando el có
 `None` porque SQLAlchemy lazy-loading requiere un contexto síncrono.
 Regla: en cualquier query async que necesite acceder a relaciones ORM, agregar
 `.options(selectinload(Model.relation))` explícitamente en la query.
+
+## Lecciones aprendidas — Sprint 4
+
+**Node.js no disponible en el entorno de desarrollo de Claude Code**
+La scaffolding de Vite requiere npm. Sin él, el frontend se escribe a mano.
+Para proyectos de portafolio, la estructura manual es válida; el usuario ejecuta
+`npm install && npm run dev` después de que Claude genera todos los archivos.
+
+**`BackgroundTasks` de FastAPI vs Celery para tareas de análisis**
+`BackgroundTasks` es suficiente para tareas de análisis únicas (POST /analyze).
+No requiere broker ni worker externo. Celery sigue siendo la opción correcta
+para scraping programado (beat schedule) y cargas de trabajo paralelas masivas.
+
+## Lecciones aprendidas — Sprint 5
+
+**`db.add()` en `audit_repo.log` no debe llamarse sobre un `AsyncMock`**
+Cuando `db = AsyncMock()`, todos sus atributos son también `AsyncMock`.
+`db.add(entry)` crea una coroutine que nunca se espera → RuntimeWarning.
+Regla: en tests que ejerciten rutas de código que llaman `audit_repo.log`,
+parchear `audit_repo.log` con `patch("...audit_repo.log", new_callable=AsyncMock)`.
+No intentar fijar `db.add = MagicMock()` después del hecho — es más limpio
+eliminar la dependencia desde el test.
+
+**`export_service` usa `hexval()` de ReportLab — verificar compatibilidad de versión**
+`colors.HexColor.hexval()` retorna un string de 8 chars (AARRGGBB) en ReportLab ≥ 4.0.
+El slice `[2:]` descarta el canal alpha. Si la versión de ReportLab cambia la
+firma, las celdas de severidad en el PDF pueden mostrar color incorrecto.
+Regla: fijar `reportlab>=4.0.0` en pyproject.toml (ya está) y cubrir con test
+que verifique el magic byte `%PDF` sin depender del color específico.

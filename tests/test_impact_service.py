@@ -129,6 +129,7 @@ async def test_map_change_creates_alert_and_items_via_rules():
               new_callable=AsyncMock, return_value=alert),
         patch("src.services.impact_service.impact_repo.create_item",
               new_callable=AsyncMock, return_value=item),
+        patch("src.services.impact_service.audit_repo.log", new_callable=AsyncMock),
     ):
         result = await map_change_to_contracts(change.id, db)
 
@@ -181,6 +182,7 @@ async def test_map_change_deduplicates_rule_contracts_already_in_clause_matches(
               new_callable=AsyncMock, return_value=alert),
         patch("src.services.impact_service.impact_repo.create_item",
               new_callable=AsyncMock, return_value=item),
+        patch("src.services.impact_service.audit_repo.log", new_callable=AsyncMock),
     ):
         result = await map_change_to_contracts(change.id, db)
 

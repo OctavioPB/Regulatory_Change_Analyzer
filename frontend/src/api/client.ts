@@ -66,6 +66,16 @@ export interface RegulatoryChange {
   created_at: string;
 }
 
+export interface AuditEntry {
+  id: string;
+  actor: string;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  detail: string | null;
+  created_at: string;
+}
+
 export interface DashboardStats {
   documents: { total: number; by_source: Record<string, number> };
   changes: { total: number; by_type: Record<string, number> };
@@ -113,5 +123,18 @@ export const api = {
       request<{ detail: string }>(`/ingest/${source}`, { method: "POST" }),
     triggerAll: () =>
       request<{ detail: string }>("/ingest/", { method: "POST" }),
+  },
+
+  export: {
+    alertXlsx: (alertId: string) => `${BASE}/export/alerts/${alertId}.xlsx`,
+    alertPdf: (alertId: string) => `${BASE}/export/alerts/${alertId}.pdf`,
+    allAlertsXlsx: () => `${BASE}/export/alerts.xlsx`,
+  },
+
+  audit: {
+    list: (entityType?: string, limit = 100) =>
+      request<AuditEntry[]>(
+        `/audit/?limit=${limit}` + (entityType ? `&entity_type=${entityType}` : "")
+      ),
   },
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, CheckCircle, XCircle, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { X, CheckCircle, XCircle, Pencil, ChevronDown, ChevronUp, Download } from "lucide-react";
 import type { ApprovalStatus, ImpactAlert, ImpactItem } from "../api/client";
 import { api } from "../api/client";
 import { SeverityBadge } from "./SeverityBadge";
@@ -55,12 +55,30 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
               {alert.items.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            <a
+              href={api.export.alertXlsx(alert.id)}
+              download
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-green-600"
+              title="Download Excel"
+            >
+              <Download size={16} />
+            </a>
+            <a
+              href={api.export.alertPdf(alert.id)}
+              download
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+              title="Download PDF"
+            >
+              <Download size={16} />
+            </a>
+            <button
+              onClick={onClose}
+              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Items list */}

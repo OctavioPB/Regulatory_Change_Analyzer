@@ -1,10 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Bell, FileText, Shield } from "lucide-react";
+import { LayoutDashboard, Bell, FileText, Shield, ClipboardCheck, ShieldCheck } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/alerts", label: "Alerts", icon: Bell },
+  { to: "/reviews", label: "Reviews", icon: ClipboardCheck },
   { to: "/documents", label: "Documents", icon: FileText },
+  { to: "/audit", label: "Audit Trail", icon: ShieldCheck },
 ];
 
 export function Sidebar() {

@@ -103,6 +103,7 @@ async def test_run_creates_new_document_with_text():
         patch.object(svc.document_repo, "create_from_raw", new=mock_create),
         patch("src.services.ingestion_service.save_raw_file"),
         patch("src.services.ingestion_service.save_processed_text"),
+        patch("src.services.ingestion_service.audit_repo.log", new_callable=AsyncMock),
     ):
         result = await run("cnbv", db)
 
