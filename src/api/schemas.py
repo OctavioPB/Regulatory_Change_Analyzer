@@ -82,6 +82,22 @@ class ContractOut(BaseModel):
     created_at: datetime
 
 
+# ── Cross-jurisdictional mapping ─────────────────────────────────────────────
+
+class CrossLinkOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    source_change_id: uuid.UUID
+    target_change_id: uuid.UUID
+    source_jurisdiction: str
+    target_jurisdiction: str
+    similarity_score: float
+    shared_rule_ids: str  # JSON string, e.g. '["R001","R007"]'
+    analysis: str
+    created_at: datetime
+
+
 # ── Review actions ────────────────────────────────────────────────────────────
 
 class ReviewAction(BaseModel):
