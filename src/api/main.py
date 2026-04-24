@@ -3,7 +3,9 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routers import alerts, audit, contracts, dashboard, documents, export, health, ingestion
+from src.api.middleware.rate_limit import IngestRateLimitMiddleware
+from src.api.routers import alerts, audit, contracts, dashboard, documents, export, health, ingestion, tasks
+from src.config import settings
 from src.database import init_db
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(
+    IngestRateLimitMiddleware,
+    max_requests=settings.ingest_rate_limit,
+    window_seconds=60,
+)
 
 app.include_router(health.router)
 app.include_router(alerts.router, prefix="/api/v1")
@@ -30,6 +37,7 @@ app.include_router(ingestion.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(export.router, prefix="/api/v1")
 app.include_router(audit.router, prefix="/api/v1")
+app.include_router(tasks.router, prefix="/api/v1")
 
 
 @app.on_event("startup")

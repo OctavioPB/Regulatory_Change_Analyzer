@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     secret_key: str = "change-this-in-production"
 
+    # RBAC — JSON map of {"api-key": "role"}, empty = dev mode (admin)
+    api_keys: str = "{}"
+
+    # Task manager integration
+    jira_base_url: str = ""          # e.g. https://yourorg.atlassian.net
+    jira_email: str = ""
+    jira_api_token: str = ""
+    jira_project_key: str = "COMP"
+    asana_access_token: str = ""
+    asana_project_gid: str = ""
+    task_manager: str = "none"       # "jira" | "asana" | "none"
+
+    # Rate limiting (requests per minute per IP on ingest endpoints)
+    ingest_rate_limit: int = 10
+
     @field_validator("data_dir", "raw_dir", "processed_dir", "contracts_dir", "cache_dir", mode="after")
     @classmethod
     def ensure_dir_exists(cls, v: Path) -> Path:

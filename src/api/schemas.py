@@ -1,7 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
+
+T = TypeVar("T")
 
 from src.models.document import ChangeType
 from src.models.impact import ApprovalStatus, Severity
@@ -86,8 +89,19 @@ class ReviewAction(BaseModel):
     reviewer_notes: str | None = None
 
 
+# ── Pagination ────────────────────────────────────────────────────────────────
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    page_size: int
+    pages: int
+
+
 # ── Generic ───────────────────────────────────────────────────────────────────
 
 class HealthOut(BaseModel):
     status: str
+    db: str = "ok"
     version: str = "0.1.0"

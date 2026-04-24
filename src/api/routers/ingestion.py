@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.database import get_db
 from src.services import ingestion_service
 
@@ -9,13 +10,13 @@ router = APIRouter(prefix="/ingest", tags=["ingestion"])
 _SUPPORTED = ingestion_service.SUPPORTED_SOURCES
 
 
-@router.get("/sources")
+@router.get("/sources", dependencies=[RequireViewer])
 async def list_sources() -> dict:
     """Return the list of supported regulatory sources."""
     return {"sources": _SUPPORTED}
 
 
-@router.post("/{source}", status_code=202)
+@router.post("/{source}", status_code=202, dependencies=[RequireAnalyst])
 async def trigger_ingestion(
     source: str,
     background_tasks: BackgroundTasks,
@@ -34,7 +35,7 @@ async def trigger_ingestion(
     return {"detail": "Ingestion queued", "source": source}
 
 
-@router.post("/", status_code=202)
+@router.post("/", status_code=202, dependencies=[RequireAnalyst])
 async def trigger_all_ingestion(background_tasks: BackgroundTasks) -> dict:
     """Trigger ingestion for all supported sources."""
     for source in _SUPPORTED:
