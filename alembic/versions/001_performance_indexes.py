@@ -3,6 +3,9 @@
 Revision ID: 001
 Revises:
 Create Date: 2026-04-23
+
+NOTE: Uses IF NOT EXISTS throughout so this migration is safe to run both on
+a fresh database (after init_db() creates the tables) and on an existing one.
 """
 
 from alembic import op
@@ -15,34 +18,29 @@ depends_on = None
 
 def upgrade() -> None:
     # B-tree indexes on frequently filtered foreign-key columns
-    op.create_index(
-        "ix_regulatory_changes_document_id",
-        "regulatory_changes",
-        ["document_id"],
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_regulatory_changes_document_id "
+        "ON regulatory_changes (document_id)"
     )
-    op.create_index(
-        "ix_impact_alerts_document_id",
-        "impact_alerts",
-        ["document_id"],
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_impact_alerts_document_id "
+        "ON impact_alerts (document_id)"
     )
-    op.create_index(
-        "ix_impact_items_alert_id",
-        "impact_items",
-        ["alert_id"],
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_impact_items_alert_id "
+        "ON impact_items (alert_id)"
     )
-    op.create_index(
-        "ix_impact_items_change_id",
-        "impact_items",
-        ["change_id"],
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_impact_items_change_id "
+        "ON impact_items (change_id)"
     )
-    op.create_index(
-        "ix_audit_logs_entity_type",
-        "audit_logs",
-        ["entity_type"],
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_logs_entity_type "
+        "ON audit_logs (entity_type)"
     )
 
-    # HNSW vector index for fast approximate nearest-neighbour search on clause embeddings.
-    # m=16 / ef_construction=64 are conservative defaults; tune after load testing.
+    # HNSW vector index for fast ANN search on clause embeddings.
+    # m=16 / ef_construction=64 are conservative defaults.
     op.execute(
         """
         CREATE INDEX IF NOT EXISTS ix_contract_clauses_embedding_hnsw
@@ -54,9 +52,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_contract_clauses_embedding_hnsw", table_name="contract_clauses")
-    op.drop_index("ix_audit_logs_entity_type", table_name="audit_logs")
-    op.drop_index("ix_impact_items_change_id", table_name="impact_items")
-    op.drop_index("ix_impact_items_alert_id", table_name="impact_items")
-    op.drop_index("ix_impact_alerts_document_id", table_name="impact_alerts")
-    op.drop_index("ix_regulatory_changes_document_id", table_name="regulatory_changes")
+    op.execute("DROP INDEX IF EXISTS ix_contract_clauses_embedding_hnsw")
+    op.execute("DROP INDEX IF EXISTS ix_audit_logs_entity_type")
+    op.execute("DROP INDEX IF EXISTS ix_impact_items_change_id")
+    op.execute("DROP INDEX IF EXISTS ix_impact_items_alert_id")
+    op.execute("DROP INDEX IF EXISTS ix_impact_alerts_document_id")
+    op.execute("DROP INDEX IF EXISTS ix_regulatory_changes_document_id")

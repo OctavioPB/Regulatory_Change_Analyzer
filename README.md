@@ -2,7 +2,7 @@
 
 An automated compliance tool that monitors regulatory publications from **CNBV** (Mexico's National Banking and Securities Commission) and the **SEC** (U.S. Securities and Exchange Commission), detects what changed between versions, maps the impact to your internal contracts and processes, and generates actionable recommendations — with a review workflow and PDF/Excel export for audit purposes.
 
-Built as a portfolio project demonstrating production-grade Python backend engineering: async FastAPI, SQLAlchemy 2.x, pgvector, NLP pipelines, and a React dashboard.
+Built as a portfolio project demonstrating production-grade Python backend engineering: async FastAPI, SQLAlchemy 2.x, pgvector, NLP pipelines, RBAC, and a React dashboard.
 
 ---
 
@@ -20,6 +20,8 @@ Built as a portfolio project demonstrating production-grade Python backend engin
                  Compliance officer reviews → Approve / Modify / Reject
                                          ↓
                               Export to PDF or Excel
+                                         ↓
+                 Cross-mapping: detect SEC ↔ CNBV overlap automatically
 ```
 
 1. **Ingestion** — fetches CNBV circulars (via DOF RSS) and SEC press releases (via SEC RSS), extracts text from PDFs and HTML pages, and stores them in PostgreSQL.
@@ -28,6 +30,8 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 4. **Recommendations** — generates templated, human-readable suggestions per impacted clause, scored by severity (High / Medium / Low).
 5. **Human-in-the-loop** — compliance officers Approve, Modify, or Reject each suggestion through the dashboard. All decisions are immutably logged.
 6. **Export** — one-click PDF and Excel reports per alert, with severity color-coding and reviewer notes, ready for audit.
+7. **Task integration** — push impact items directly to Jira or Asana as tickets with severity-mapped priority.
+8. **Multi-jurisdictional cross-mapping** — automatically detects when an SEC rule change has secondary compliance implications for CNBV (and vice versa), using two-stage validation: pgvector cosine similarity + shared regulatory domain filtering. Zero LLM API cost.
 
 ---
 
@@ -36,15 +40,17 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 | Layer | Technologies |
 |-------|-------------|
 | API | FastAPI, Pydantic v2, uvicorn |
+| Auth | API key RBAC (viewer / analyst / compliance_officer / admin) |
 | Database | PostgreSQL 16 + pgvector (cosine similarity search) |
 | ORM | SQLAlchemy 2.x async, Alembic migrations |
 | NLP | difflib (section comparison), regex patterns (entity extraction), sentence-transformers `all-MiniLM-L6-v2` (embeddings) |
 | Scraping | httpx, feedparser, BeautifulSoup4, pypdf, python-docx |
 | Task queue | Celery + Redis (scheduled scraping) |
+| Task integration | Jira REST API v3, Asana REST API |
 | Export | reportlab (PDF), openpyxl (Excel) |
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
-| Testing | pytest, pytest-asyncio, hypothesis, 118 tests |
-| Infrastructure | Docker, docker-compose (PostgreSQL + pgvector, Redis) |
+| Testing | pytest, pytest-asyncio, hypothesis, 169 tests |
+| Infrastructure | Docker, docker compose (PostgreSQL + pgvector, Redis) |
 
 ---
 
@@ -53,17 +59,23 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 ```
 ├── src/
 │   ├── api/                    # FastAPI app and routers
-│   │   └── routers/            # alerts, audit, contracts, dashboard,
-│   │                           # documents, export, health, ingestion
+│   │   ├── middleware/         # rate_limit (sliding window on ingest endpoints)
+│   │   └── routers/            # alerts, audit, contracts, cross_mapping,
+│   │                           # dashboard, documents, export, health,
+│   │                           # ingestion, tasks
 │   ├── ingestion/              # CNBV and SEC scrapers
-│   ├── mapping/                # embedder, semantic_mapper, rules_engine
-│   ├── models/                 # SQLAlchemy ORM models
+│   ├── integrations/           # task manager adapters (Jira, Asana)
+│   ├── mapping/                # embedder, semantic_mapper, rules_engine,
+│   │                           # cross_mapper
+│   ├── models/                 # SQLAlchemy ORM models (incl. cross_mapping)
 │   ├── nlp/                    # section_splitter, comparator, extractor,
 │   │                           # classifier, pipeline
 │   ├── parsing/                # PDF and DOCX text extractors
 │   ├── recommendations/        # suggestion template engine
-│   ├── repositories/           # DB access (audit, contract, document, impact)
-│   ├── services/               # ingestion, nlp, impact, export services
+│   ├── repositories/           # DB access (audit, contract, cross_mapping,
+│   │                           # document, impact)
+│   ├── services/               # ingestion, nlp, impact, export,
+│   │                           # cross_mapping, task services
 │   └── storage/                # local file storage (raw + processed)
 ├── frontend/                   # React dashboard (Vite + Tailwind)
 │   └── src/
@@ -73,8 +85,11 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 │   ├── ingest_source.py        # scrape one or all sources
 │   ├── run_analysis.py         # run NLP pipeline on pending documents
 │   └── map_impacts.py          # map changes to contract impacts
-├── tests/                      # 118 tests (unit + integration)
+├── tests/                      # 169 tests (unit + integration)
 ├── alembic/                    # DB migrations
+│   └── versions/
+│       ├── 001_performance_indexes.py    # B-tree + HNSW vector indexes
+│       └── 002_cross_jurisdiction_links.py
 ├── docker-compose.yml
 └── pyproject.toml
 ```
@@ -84,7 +99,7 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 ## Requirements
 
 - Python 3.11+
-- Docker and docker-compose (for PostgreSQL + Redis)
+- Docker (for PostgreSQL + Redis) — Docker Desktop v2+ uses `docker compose` (no hyphen)
 - Node.js 18+ (for the React frontend)
 
 ---
@@ -98,7 +113,7 @@ git clone https://github.com/yourusername/regulatory-change-analyzer.git
 cd regulatory-change-analyzer
 
 python -m venv .venv
-# Windows
+# Windows (PowerShell — run once if needed: Set-ExecutionPolicy RemoteSigned -Scope CurrentUser)
 .venv\Scripts\activate
 # macOS / Linux
 source .venv/bin/activate
@@ -115,30 +130,55 @@ cp .env.example .env
 Edit `.env`:
 
 ```dotenv
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/regulatory_db
+DATABASE_URL=postgresql+asyncpg://rca_user:rca_pass@localhost:5432/regulatory_db
 REDIS_URL=redis://localhost:6379/0
 ANTHROPIC_API_KEY=sk-ant-...          # optional — reserved for future LLM features
 EMBEDDING_MODEL=all-MiniLM-L6-v2
 LOG_LEVEL=INFO
+
+# RBAC — comma-separated key:role pairs. Leave as "{}" to disable auth (dev mode).
+API_KEYS={"your-key-here":"compliance_officer"}
+
+# Rate limiting — max POST requests to /ingest/* per minute per IP
+INGEST_RATE_LIMIT=10
+
+# Task integration (optional)
+TASK_MANAGER=none    # jira | asana | none
+JIRA_URL=https://yourorg.atlassian.net
+JIRA_USER=you@example.com
+JIRA_TOKEN=...
+JIRA_PROJECT_KEY=COMP
+# ASANA_TOKEN=...
+# ASANA_PROJECT_GID=...
 ```
 
 ### 3. Start infrastructure
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This starts:
 - PostgreSQL 16 with the `pgvector` extension on port **5432**
 - Redis 7 on port **6379**
 
-### 4. Run database migrations
+### 4. Initialize the database schema
+
+```bash
+python -c "import asyncio; from src.database import init_db; asyncio.run(init_db())"
+```
+
+This creates all tables (including `cross_jurisdiction_links`) and enables the `pgvector` extension.
+
+### 5. Run database migrations
 
 ```bash
 alembic upgrade head
 ```
 
-### 5. Start the API server
+This applies performance indexes (B-tree on FK columns, HNSW vector index on clause embeddings).
+
+### 6. Start the API server
 
 ```bash
 uvicorn src.api.main:app --reload --port 8000
@@ -146,7 +186,7 @@ uvicorn src.api.main:app --reload --port 8000
 
 The interactive API docs are at `http://localhost:8000/docs`.
 
-### 6. Start the frontend
+### 7. Start the frontend
 
 ```bash
 cd frontend
@@ -171,10 +211,11 @@ python scripts/ingest_source.py --source cnbv
 python scripts/ingest_source.py --source sec
 ```
 
-Or trigger via the API:
+Or trigger via the API (requires `analyst` role or higher):
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/ingest/cnbv
+curl -X POST http://localhost:8000/api/v1/ingest/cnbv \
+  -H "X-API-Key: your-key-here"
 ```
 
 ### Run the NLP analysis pipeline
@@ -193,6 +234,7 @@ Upload your contracts first through the dashboard (`/contracts` → Upload) or v
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/contracts/upload \
+  -H "X-API-Key: your-key-here" \
   -F "file=@contract.pdf" \
   -F "name=Master Loan Agreement" \
   -F "contract_type=loan" \
@@ -212,6 +254,33 @@ python scripts/map_impacts.py --document-id <uuid>
 python scripts/map_impacts.py --change-id <uuid>
 ```
 
+### Cross-jurisdictional scan
+
+After ingesting changes from both CNBV and SEC, trigger the cross-mapping engine:
+
+```bash
+# Scan a single change for SEC ↔ CNBV overlap
+curl -X POST http://localhost:8000/api/v1/cross-mapping/scan/<change-id> \
+  -H "X-API-Key: your-key-here"
+
+# Scan all changes in bulk (runs in background)
+curl -X POST http://localhost:8000/api/v1/cross-mapping/scan-all \
+  -H "X-API-Key: your-key-here"
+
+# View cross-links
+curl "http://localhost:8000/api/v1/cross-mapping/?source_jurisdiction=SEC&target_jurisdiction=CNBV" \
+  -H "X-API-Key: your-key-here"
+```
+
+### Push impact items to Jira / Asana
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tasks/push/<alert-id> \
+  -H "X-API-Key: your-key-here"
+```
+
+Each high/medium/low impact item becomes a separate ticket with severity-mapped priority.
+
 ### Review and export
 
 Open the dashboard at `http://localhost:5173`:
@@ -219,7 +288,7 @@ Open the dashboard at `http://localhost:5173`:
 | Page | Purpose |
 |------|---------|
 | **Dashboard** | Stats overview: documents, changes, unread alerts, pending reviews |
-| **Alerts** | Feed of all impact alerts, click to open detail drawer with suggestions |
+| **Alerts** | Paginated feed of all impact alerts, click to open detail drawer with suggestions |
 | **Reviews** | All pending items in one place — Approve / Modify / Reject with notes |
 | **Documents** | Browse ingested documents, view detected changes, trigger re-analysis |
 | **Audit Trail** | Immutable log of every system action and reviewer decision |
@@ -228,7 +297,7 @@ Export from any alert drawer (Excel or PDF), or download all alerts as a workboo
 
 ```bash
 curl http://localhost:8000/api/v1/export/alerts.xlsx -o report.xlsx
-curl http://localhost:8000/api/v1/export/alerts/<alert-id>.pdf -o alert.pdf
+curl "http://localhost:8000/api/v1/export/alerts/<alert-id>.pdf" -o alert.pdf
 ```
 
 ### Scheduled ingestion (Celery)
@@ -245,25 +314,75 @@ celery -A src.worker beat --loglevel=info
 
 ## API reference
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/api/v1/dashboard/stats` | Aggregate counts for the dashboard |
-| `GET` | `/api/v1/documents/` | List regulatory documents |
-| `GET` | `/api/v1/documents/{id}/changes` | Changes detected in a document |
-| `POST` | `/api/v1/documents/{id}/analyze` | Trigger NLP analysis (async) |
-| `GET` | `/api/v1/alerts/` | List impact alerts (`?unread_only=true`) |
-| `GET` | `/api/v1/alerts/{id}` | Get alert detail (marks as read) |
-| `POST` | `/api/v1/alerts/{id}/items/{item_id}/review` | Submit a review decision |
-| `GET` | `/api/v1/contracts/` | List uploaded contracts |
-| `POST` | `/api/v1/contracts/upload` | Upload a PDF or DOCX contract |
-| `POST` | `/api/v1/ingest/{source}` | Trigger scraping (`cnbv` or `sec`) |
-| `GET` | `/api/v1/export/alerts/{id}.xlsx` | Download single alert as Excel |
-| `GET` | `/api/v1/export/alerts/{id}.pdf` | Download single alert as PDF |
-| `GET` | `/api/v1/export/alerts.xlsx` | Download all alerts as Excel |
-| `GET` | `/api/v1/audit/` | List audit log entries |
+### Core
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/health` | — | Health check (includes DB ping) |
+| `GET` | `/api/v1/dashboard/stats` | viewer | Aggregate counts for the dashboard |
+
+### Documents
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/documents/` | viewer | List regulatory documents (`?page=1&page_size=20`) |
+| `GET` | `/api/v1/documents/{id}/changes` | viewer | Changes detected in a document |
+| `POST` | `/api/v1/documents/{id}/analyze` | analyst | Trigger NLP analysis (async) |
+
+### Alerts
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/alerts/` | viewer | List impact alerts (`?unread_only=true&page=1&page_size=20`) |
+| `GET` | `/api/v1/alerts/{id}` | viewer | Get alert detail (marks as read) |
+| `POST` | `/api/v1/alerts/{id}/items/{item_id}/review` | compliance_officer | Submit Approve / Modify / Reject |
+
+### Contracts
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/contracts/` | viewer | List uploaded contracts |
+| `POST` | `/api/v1/contracts/upload` | analyst | Upload a PDF or DOCX contract |
+
+### Ingestion
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `POST` | `/api/v1/ingest/{source}` | analyst | Trigger scraping (`cnbv` or `sec`). Rate-limited: 10 req/min. |
+
+### Export
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/export/alerts/{id}.xlsx` | viewer | Download single alert as Excel |
+| `GET` | `/api/v1/export/alerts/{id}.pdf` | viewer | Download single alert as PDF |
+| `GET` | `/api/v1/export/alerts.xlsx` | viewer | Download all alerts as Excel |
+
+### Cross-mapping
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/cross-mapping/` | viewer | List cross-jurisdiction links (`?source_jurisdiction=SEC&target_jurisdiction=CNBV&page=1`) |
+| `GET` | `/api/v1/cross-mapping/change/{change_id}` | viewer | Links for a specific change (as source or target) |
+| `POST` | `/api/v1/cross-mapping/scan/{change_id}` | analyst | Scan one change (async, 202) |
+| `POST` | `/api/v1/cross-mapping/scan-all` | compliance_officer | Bulk scan all unscanned changes (async, 202) |
+
+### Task integration
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `POST` | `/api/v1/tasks/push/{alert_id}` | compliance_officer | Push impact items to Jira or Asana |
+| `GET` | `/api/v1/tasks/config` | viewer | Show active task manager and project config |
+
+### Audit
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/api/v1/audit/` | viewer | List audit log entries |
 
 Full interactive docs: `http://localhost:8000/docs`
+
+**RBAC roles** (hierarchy): `viewer` < `analyst` < `compliance_officer` < `admin`. Pass `X-API-Key: <key>` header. Set `API_KEYS={}` in `.env` to disable auth (development mode).
 
 ---
 
@@ -275,13 +394,14 @@ pytest tests/ -v
 
 # Specific module
 pytest tests/test_nlp_pipeline.py -v
-pytest tests/test_export_service.py -v
+pytest tests/test_cross_mapping.py -v
+pytest tests/test_rbac.py -v
 
 # With coverage
 pytest tests/ --cov=src --cov-report=term-missing
 ```
 
-Current status: **118 tests passing**.
+Current status: **169 tests passing**.
 
 ---
 
@@ -299,13 +419,27 @@ A single word change ("20%" → "15%") in a 40-character section produces a chan
 **Why two mapping paths (semantic + rules engine)?**
 Semantic similarity catches clauses that are conceptually related but don't share keywords (e.g. "exposure limit" ≈ "límite de contraparte"). The keyword rules engine catches contracts by type/area even before they've been embedded — useful when a new contract type is uploaded without re-running the full pipeline.
 
+**Why two-stage cross-mapping instead of similarity alone?**
+Stage 1 (pgvector cosine, threshold 0.60) retrieves candidates efficiently. Stage 2 (shared regulatory domain R001–R008) rejects false positives where documents are superficially similar but cover different regulatory domains (e.g. both mention "effective date" but one is AML and the other is data privacy). The combination achieves precision without any LLM call — zero API cost for the cross-mapping feature.
+
+**Why hybrid `init_db()` + Alembic instead of pure Alembic?**
+`CREATE EXTENSION IF NOT EXISTS vector` requires superuser privileges and runs in a raw connection, not a migration transaction. `init_db()` handles extension creation and table schema; Alembic handles indexes and schema evolution. All migrations use `IF NOT EXISTS` raw SQL to be safe whether or not `init_db()` has already run.
+
+**Why in-memory rate limiting instead of Redis-backed?**
+The ingest endpoints are low-volume (manual triggers or beat tasks), not a high-concurrency SaaS endpoint. A sliding-window in-memory dict is sufficient and adds zero infrastructure dependency. Redis-backed limiting (e.g. via `slowapi`) is the right choice if multiple API workers run in parallel.
+
 ---
 
 ## Roadmap
 
-- [ ] Sprint 6 — Jira/Asana task creation, RBAC, performance tuning
+- [x] Sprint 1 — Foundation & Ingestion Engine
+- [x] Sprint 2 — NLP & Change Detection
+- [x] Sprint 3 — Knowledge Base & Semantic Mapping
+- [x] Sprint 4 — Recommendation Engine & UI Core
+- [x] Sprint 5 — Human-in-the-Loop & Export
+- [x] Sprint 6 — Task integration (Jira/Asana), RBAC, pagination, performance indexes, rate limiting
+- [x] Multi-jurisdictional cross-mapping (SEC ↔ CNBV), zero LLM cost
 - [ ] Automated addendum drafting via Claude API
-- [ ] Multi-jurisdictional cross-mapping (SEC ↔ CNBV)
 - [ ] Predictive alerts from proposed rules
 - [ ] "Chat with Policy" — RAG interface for compliance officers
 - [ ] Multilingual support (Portuguese, French for ESMA)
