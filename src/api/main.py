@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routers import alerts, contracts, health
+from src.api.routers import alerts, contracts, dashboard, documents, health, ingestion
 from src.database import init_db
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,9 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(alerts.router, prefix="/api/v1")
 app.include_router(contracts.router, prefix="/api/v1")
+app.include_router(documents.router, prefix="/api/v1")
+app.include_router(ingestion.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
 
 
 @app.on_event("startup")

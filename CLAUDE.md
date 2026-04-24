@@ -163,7 +163,7 @@ The **Regulatory Change Analyzer** is an automated tool designed to monitor, int
 Sprint 1 — Foundation & Ingestion Engine   [x] Completado (2026-04-23)
 Sprint 2 — NLP & Change Detection         [x] Completado (2026-04-23)
 Sprint 3 — Knowledge Base & Semantic Mapping [x] Completado (2026-04-22)
-Sprint 4 — Recommendation Engine & UI Core  [ ] Pendiente
+Sprint 4 — Recommendation Engine & UI Core  [x] Completado (2026-04-24)
 Sprint 5 — Human-in-the-Loop & Export      [ ] Pendiente
 Sprint 6 — Integration & Final Polish      [ ] Pendiente
 ```
