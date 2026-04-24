@@ -12,6 +12,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+interface Page<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Severity = "high" | "medium" | "low";
@@ -94,7 +102,7 @@ export const api = {
 
   alerts: {
     list: (unreadOnly = false) =>
-      request<ImpactAlert[]>(`/alerts?unread_only=${unreadOnly}`),
+      request<Page<ImpactAlert>>(`/alerts/?unread_only=${unreadOnly}`).then((p) => p.items),
     get: (id: string) => request<ImpactAlert>(`/alerts/${id}`),
     review: (alertId: string, itemId: string, status: ApprovalStatus, notes?: string) =>
       request<{ detail: string; status: string }>(
@@ -108,9 +116,9 @@ export const api = {
 
   documents: {
     list: (source?: string) =>
-      request<RegulatoryDocument[]>(
-        source ? `/documents?source=${source}` : "/documents"
-      ),
+      request<Page<RegulatoryDocument>>(
+        source ? `/documents/?source=${source}` : "/documents/"
+      ).then((p) => p.items),
     get: (id: string) => request<RegulatoryDocument>(`/documents/${id}`),
     changes: (id: string) => request<RegulatoryChange[]>(`/documents/${id}/changes`),
     analyze: (id: string) =>

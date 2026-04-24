@@ -24,7 +24,7 @@ Built as a portfolio project demonstrating production-grade Python backend engin
                  Cross-mapping: detect SEC ↔ CNBV overlap automatically
 ```
 
-1. **Ingestion** — fetches CNBV circulars (via DOF RSS) and SEC press releases (via SEC RSS), extracts text from PDFs and HTML pages, and stores them in PostgreSQL.
+1. **Ingestion** — fetches CNBV circulars (via DOF RSS, when available) and SEC press releases (via SEC RSS), extracts text from PDFs and HTML pages, and stores them in PostgreSQL.
 2. **NLP pipeline** — splits regulatory text into sections, computes section-level diffs against the previous version, extracts dates/articles/percentages/penalties, classifies change types (new requirement, limit modification, repeal, deadline, etc.), and detects specific numeric changes (e.g. 20% → 15%).
 3. **Impact mapping** — finds similar contract clauses using pgvector cosine similarity (sentence-transformers embeddings) and applies a keyword rules engine to flag contract types/areas by regulatory domain (SOFOM/credit, derivatives, AML/PLD, data privacy, fintech, capital requirements, investment funds).
 4. **Recommendations** — generates templated, human-readable suggestions per impacted clause, scored by severity (High / Medium / Low).
@@ -83,6 +83,7 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 │       └── components/         # AlertDrawer, AlertsTable, StatsCard, badges
 ├── scripts/                    # CLI runners
 │   ├── ingest_source.py        # scrape one or all sources
+│   ├── seed_cnbv.py            # insert synthetic CNBV docs (dev — DOF RSS offline)
 │   ├── run_analysis.py         # run NLP pipeline on pending documents
 │   └── map_impacts.py          # map changes to contract impacts
 ├── tests/                      # 169 tests (unit + integration)
@@ -217,6 +218,14 @@ Or trigger via the API (requires `analyst` role or higher):
 curl -X POST http://localhost:8000/api/v1/ingest/cnbv \
   -H "X-API-Key: your-key-here"
 ```
+
+> **Note — DOF RSS (CNBV):** As of April 2026 the DOF restructured its website and the RSS feed at `/rss.php` returns 404. If the live feed is unavailable, seed realistic CNBV documents for development:
+>
+> ```bash
+> python scripts/seed_cnbv.py
+> ```
+>
+> This inserts three synthetic circulars (leverage limits, AML/PLD fintech, Basel III capital) directly into the database, covering the same regulatory domains as the SEC documents so the cross-mapper can find links between them. When the DOF restores its feed, update `DOF_RSS_URL` in `src/ingestion/cnbv.py`.
 
 ### Run the NLP analysis pipeline
 
@@ -402,6 +411,59 @@ pytest tests/ --cov=src --cov-report=term-missing
 ```
 
 Current status: **169 tests passing**.
+
+---
+
+## Troubleshooting
+
+**`python -m json.tool` says "Expecting value" when piping `curl` output on Windows**
+
+PowerShell's `curl` is an alias for `Invoke-WebRequest`, not the real curl binary. Its output is a structured object, not raw text. Use instead:
+
+```powershell
+Invoke-WebRequest http://localhost:8000/api/v1/dashboard/stats | Select-Object -ExpandProperty Content
+```
+
+Or install the real curl (ships with Windows 10+, available in Git Bash and WSL) and call it explicitly.
+
+**`Invoke-WebRequest -Method POST` returns "connection was closed unexpectedly"**
+
+PowerShell's WinHTTP stack sometimes drops the connection on POST requests with no body against uvicorn. Use the CLI script instead — it bypasses HTTP entirely:
+
+```bash
+python scripts/ingest_source.py --source cnbv
+```
+
+**`alembic upgrade head` fails with "relation does not exist"**
+
+Alembic migrations assume tables already exist (they only add indexes). Run `init_db()` first:
+
+```bash
+python -c "import asyncio; from src.database import init_db; asyncio.run(init_db())"
+alembic upgrade head
+```
+
+**Docker Desktop not running — `docker compose up -d` fails**
+
+Start Docker Desktop from the Start menu and wait for the whale icon in the taskbar to stop animating before retrying. On first launch this can take 30–60 seconds.
+
+**PowerShell execution policy blocks `.venv\Scripts\activate`**
+
+Run once per user profile:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**DOF RSS returns 404 (CNBV scraper gets zero documents)**
+
+The DOF restructured its website. Use the development seed script:
+
+```bash
+python scripts/seed_cnbv.py
+```
+
+Update `DOF_RSS_URL` in `src/ingestion/cnbv.py` when the DOF restores the feed.
 
 ---
 

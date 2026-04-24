@@ -10,6 +10,7 @@ from src.ingestion.base import BaseScraper, RawDocument
 logger = logging.getLogger(__name__)
 
 # DOF (Diario Oficial de la Federación) RSS — the official gazette for CNBV circulars
+# NOTE: as of April 2026 the DOF restructured its site; update this URL if the feed moves.
 DOF_RSS_URL = "https://www.dof.gob.mx/rss.php"
 
 _CNBV_KEYWORDS = [
