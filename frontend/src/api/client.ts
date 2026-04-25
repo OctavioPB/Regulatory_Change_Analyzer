@@ -80,6 +80,16 @@ export interface MonthlyPoint {
   month: string;
   count: number;
 }
+
+export interface ChatCitation {
+  type: "regulation" | "contract";
+  ref_id: number;
+  title: string;
+  source: string;
+  article_ref: string;
+  excerpt: string;
+  publication_date: string | null;
+}
 export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";
 export type ChangeType =
   | "new_requirement"
@@ -201,6 +211,15 @@ export const api = {
       request<{ detail: string }>("/ingest/analyze", { method: "POST" }),
     mapImpacts: () =>
       request<{ detail: string }>("/ingest/map", { method: "POST" }),
+  },
+
+  chat: {
+    stream: (query: string): Promise<Response> =>
+      fetch(`${BASE}/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      }),
   },
 
   heatmap: {

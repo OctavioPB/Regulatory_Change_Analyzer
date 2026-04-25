@@ -168,6 +168,7 @@ Sprint 5 — Human-in-the-Loop & Export      [x] Completado (2026-04-24)
 Sprint 6 — Integration & Final Polish      [x] Completado (2026-04-23)
 Sprint 7 — Trend Analysis                  [x] Completado (2026-04-24)
 Sprint 8 — Risk Heatmaps                   [x] Completado (2026-04-25)
+Sprint 9 — Chat with Policy (RAG)          [x] Completado (2026-04-25)
 ```
 
 ## Lecciones aprendidas — Sprint 1

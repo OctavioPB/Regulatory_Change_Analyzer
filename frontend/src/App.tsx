@@ -9,6 +9,7 @@ import { AuditLog } from "./pages/AuditLog";
 import { Pipeline } from "./pages/Pipeline";
 import { Trends } from "./pages/Trends";
 import { Heatmap } from "./pages/Heatmap";
+import { Chat } from "./pages/Chat";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/trends" element={<Trends />} />
             <Route path="/heatmap" element={<Heatmap />} />
+            <Route path="/chat" element={<Chat />} />
           </Routes>
         </div>
         <Footer />
