@@ -81,6 +81,11 @@ export interface MonthlyPoint {
   count: number;
 }
 
+export interface AddendumMeta {
+  contract_name: string;
+  doc_title: string;
+}
+
 export interface ChatCitation {
   type: "regulation" | "contract";
   ref_id: number;
@@ -240,6 +245,17 @@ export const api = {
     forecast: () => request<DomainForecast[]>("/trends/forecast"),
     stats: () => request<TrendStats>("/trends/stats"),
     extractAll: () => request<{ detail: string }>("/trends/extract-all", { method: "POST" }),
+  },
+
+  addendum: {
+    stream: (alertId: string): Promise<Response> =>
+      fetch(`${BASE}/addendum/draft/${alertId}`, { method: "POST" }),
+    exportDoc: (draft_text: string, title: string, format: "pdf" | "docx"): Promise<Response> =>
+      fetch(`${BASE}/addendum/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft_text, title, format }),
+      }),
   },
 
   export: {

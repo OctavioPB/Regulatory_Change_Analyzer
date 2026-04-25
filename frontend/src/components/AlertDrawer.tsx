@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { X, CheckCircle, XCircle, Pencil, ChevronDown, ChevronUp, Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X, CheckCircle, XCircle, Pencil, ChevronDown, ChevronUp, Download, FileSignature } from "lucide-react";
 import type { ApprovalStatus, ImpactAlert, ImpactItem } from "../api/client";
 import { api } from "../api/client";
 import { SeverityBadge } from "./SeverityBadge";
@@ -17,6 +18,7 @@ interface ReviewState {
 }
 
 export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<ReviewState | null>(null);
   const [loading, setLoading] = useState(false);
@@ -62,6 +64,14 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => { onClose(); navigate("/addendum", { state: { alertId: alert.id } }); }}
+              className="btn btn-ghost"
+              title="Draft addendum"
+              style={{ display: "flex", alignItems: "center", gap: "5px" }}
+            >
+              <FileSignature size={14} /> Addendum
+            </button>
             <a href={api.export.alertXlsx(alert.id)} download className="btn btn-ghost" title="Download Excel">
               <Download size={14} /> XLS
             </a>
