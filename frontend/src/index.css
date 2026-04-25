@@ -99,4 +99,60 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
+
+  /* ── Button system ──────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-family: var(--fb);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: opacity 0.15s, background 0.15s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-80);
+  }
+  .btn-success {
+    background: #27B97C;
+    color: #fff;
+  }
+  .btn-success:hover:not(:disabled) {
+    background: #1fa068;
+  }
+  .btn-danger {
+    background: #E03448;
+    color: #fff;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: #c42a3c;
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary-30);
+  }
+  .btn-outline:hover:not(:disabled) {
+    background: var(--primary-10);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--mid);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--light);
+  }
 }

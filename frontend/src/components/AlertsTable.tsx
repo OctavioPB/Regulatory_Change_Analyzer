@@ -70,7 +70,7 @@ export function AlertsTable({ alerts, onSelect }: Props) {
                   ? <MailOpen size={13} />
                   : <Mail size={13} style={{ color: "var(--primary)" }} />}
               </td>
-              <td className="px-4 py-3" style={{ fontFamily: "var(--fb)", fontSize: "14px" }}>
+              <td className="px-4 py-3 font-body" style={{ fontSize: "14px" }}>
                 <span style={{ color: alert.is_read ? "var(--mid)" : "var(--dark)", fontWeight: alert.is_read ? 400 : 500 }}>
                   {alert.title}
                 </span>
@@ -80,10 +80,10 @@ export function AlertsTable({ alerts, onSelect }: Props) {
                   ? <SeverityBadge severity={maxSeverity(alert)} />
                   : <span style={{ color: "var(--mid)" }}>—</span>}
               </td>
-              <td className="px-4 py-3" style={{ color: "var(--mid)", fontFamily: "var(--fb)", fontSize: "14px" }}>
+              <td className="px-4 py-3 font-body" style={{ fontSize: "13px", color: "var(--mid)" }}>
                 {alert.items.length}
               </td>
-              <td className="px-4 py-3" style={{ color: "var(--mid)", fontFamily: "var(--fb)", fontSize: "12px" }}>
+              <td className="px-4 py-3 font-body" style={{ fontSize: "12px", color: "var(--mid)" }}>
                 {fmtDate(alert.created_at)}
               </td>
               <td className="px-4 py-3" style={{ color: "var(--primary-30)" }}>

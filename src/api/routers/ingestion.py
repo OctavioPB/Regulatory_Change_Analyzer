@@ -16,25 +16,6 @@ async def list_sources() -> dict:
     return {"sources": _SUPPORTED}
 
 
-@router.post("/{source}", status_code=202, dependencies=[RequireAnalyst])
-async def trigger_ingestion(
-    source: str,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Trigger document ingestion for a regulatory source.
-
-    Runs asynchronously; returns immediately with 202 Accepted.
-    """
-    if source not in _SUPPORTED:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown source '{source}'. Supported: {_SUPPORTED}",
-        )
-    background_tasks.add_task(_run_ingest, source)
-    return {"detail": "Ingestion queued", "source": source}
-
-
 @router.post("/", status_code=202, dependencies=[RequireAnalyst])
 async def trigger_all_ingestion(background_tasks: BackgroundTasks) -> dict:
     """Trigger ingestion for all supported sources."""
@@ -55,6 +36,25 @@ async def trigger_map_all(background_tasks: BackgroundTasks) -> dict:
     """Trigger impact mapping for all documents with unprocessed changes."""
     background_tasks.add_task(_run_map_all)
     return {"detail": "Impact mapping queued"}
+
+
+@router.post("/{source}", status_code=202, dependencies=[RequireAnalyst])
+async def trigger_ingestion(
+    source: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Trigger document ingestion for a regulatory source.
+
+    Runs asynchronously; returns immediately with 202 Accepted.
+    """
+    if source not in _SUPPORTED:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown source '{source}'. Supported: {_SUPPORTED}",
+        )
+    background_tasks.add_task(_run_ingest, source)
+    return {"detail": "Ingestion queued", "source": source}
 
 
 async def _run_ingest(source: str) -> None:

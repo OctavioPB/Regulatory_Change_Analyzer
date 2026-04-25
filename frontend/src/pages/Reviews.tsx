@@ -138,29 +138,14 @@ export function Reviews() {
                     onChange={(e) => setNotes((prev) => ({ ...prev, [p.item.id]: e.target.value }))}
                   />
 
-                  <div className="flex gap-2">
-                    <button
-                      disabled={submitting === p.item.id}
-                      onClick={() => review(p, "approved")}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
-                      style={{ background: "#27B97C", color: "#fff", fontSize: "12px" }}
-                    >
+                  <div className="flex gap-2 flex-wrap">
+                    <button disabled={submitting === p.item.id} onClick={() => review(p, "approved")} className="btn btn-success">
                       <CheckCircle size={12} /> Approve
                     </button>
-                    <button
-                      disabled={submitting === p.item.id}
-                      onClick={() => review(p, "modified")}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
-                      style={{ background: "var(--primary)", color: "#fff", fontSize: "12px" }}
-                    >
+                    <button disabled={submitting === p.item.id} onClick={() => review(p, "modified")} className="btn btn-primary">
                       <Pencil size={12} /> Modify & Accept
                     </button>
-                    <button
-                      disabled={submitting === p.item.id}
-                      onClick={() => review(p, "rejected")}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
-                      style={{ background: "#E03448", color: "#fff", fontSize: "12px" }}
-                    >
+                    <button disabled={submitting === p.item.id} onClick={() => review(p, "rejected")} className="btn btn-danger">
                       <XCircle size={12} /> Reject
                     </button>
                   </div>

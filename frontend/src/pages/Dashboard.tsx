@@ -5,7 +5,11 @@ import { StatsCard } from "../components/StatsCard";
 import { AlertsTable } from "../components/AlertsTable";
 import { AlertDrawer } from "../components/AlertDrawer";
 
-const seriesColors = ["#003366", "#27B97C", "#7C4DBD", "#F07020", "#E05080"];
+const barGradients: Record<string, string> = {
+  high:   "linear-gradient(90deg, #003366, #1A4D80)",
+  medium: "linear-gradient(90deg, #1A4D80, #336699)",
+  low:    "linear-gradient(90deg, #336699, #4A7FAA)",
+};
 
 export function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -61,13 +65,7 @@ export function Dashboard() {
         <div className="flex flex-col items-center justify-center gap-3 py-24">
           <AlertTriangle size={28} style={{ color: "#E03448" }} />
           <p className="font-body" style={{ fontSize: "14px", color: "var(--mid)" }}>{error}</p>
-          <button
-            onClick={load}
-            className="rounded-lg px-4 py-1.5 font-body font-medium text-white"
-            style={{ background: "var(--primary)", fontSize: "13px" }}
-          >
-            Retry →
-          </button>
+          <button onClick={load} className="btn btn-primary">Retry →</button>
         </div>
       ) : (
         <div className="flex flex-col gap-8 px-8 py-8">
@@ -80,11 +78,7 @@ export function Dashboard() {
                   Live totals across all monitored regulatory sources and your document inventory.
                 </p>
               </div>
-              <button
-                onClick={load}
-                className="font-body font-medium transition-colors hover:text-primary"
-                style={{ fontSize: "12px", color: "var(--mid)" }}
-              >
+              <button onClick={load} className="btn btn-ghost" style={{ fontSize: "12px" }}>
                 Refresh →
               </button>
             </div>
@@ -126,11 +120,11 @@ export function Dashboard() {
                 </p>
                 <div className="rounded-xl bg-white p-6 shadow-sm" style={{ border: "1px solid var(--primary-10)" }}>
                   <div className="flex flex-col gap-3">
-                    {(["high", "medium", "low"] as const).map((sev, i) => {
+                    {(["high", "medium", "low"] as const).map((sev) => {
                       const count = stats.impact_items.by_severity[sev] ?? 0;
                       const total = stats.impact_items.total;
                       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                      const color = seriesColors[i === 0 ? 4 : i === 1 ? 3 : 1];
+                      const color = barGradients[sev];
                       return (
                         <div key={sev} className="flex items-center gap-3">
                           <span

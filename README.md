@@ -2,7 +2,7 @@
 
 An automated compliance tool that monitors regulatory publications from **CNBV** (Mexico's National Banking and Securities Commission) and the **SEC** (U.S. Securities and Exchange Commission), detects what changed between versions, maps the impact to your internal contracts and processes, and generates actionable recommendations — with a review workflow and PDF/Excel export for audit purposes.
 
-Built as a portfolio project demonstrating production-grade Python backend engineering: async FastAPI, SQLAlchemy 2.x, pgvector, NLP pipelines, RBAC, and a React dashboard.
+Built as a portfolio project demonstrating production-grade Python backend engineering: async FastAPI, SQLAlchemy 2.x, pgvector, NLP pipelines, RBAC, and a React dashboard styled with the **OPB brand system** (Fraunces + Plus Jakarta Sans, navy/gold palette).
 
 ---
 
@@ -77,10 +77,12 @@ Built as a portfolio project demonstrating production-grade Python backend engin
 │   ├── services/               # ingestion, nlp, impact, export,
 │   │                           # cross_mapping, task services
 │   └── storage/                # local file storage (raw + processed)
-├── frontend/                   # React dashboard (Vite + Tailwind)
+├── frontend/                   # React dashboard (Vite + Tailwind + OPB brand)
 │   └── src/
-│       ├── pages/              # Dashboard, Alerts, Reviews, Documents, AuditLog
-│       └── components/         # AlertDrawer, AlertsTable, StatsCard, badges
+│       ├── pages/              # Dashboard, Alerts, Reviews, Documents,
+│       │                       # AuditLog, Pipeline
+│       └── components/         # AlertDrawer, AlertsTable, StatsCard, badges,
+│                               # Navbar, Footer
 ├── scripts/                    # CLI runners
 │   ├── ingest_source.py        # scrape one or all sources
 │   ├── seed_cnbv.py            # insert synthetic CNBV docs (dev — DOF RSS offline)
@@ -237,9 +239,18 @@ python scripts/run_analysis.py
 python scripts/run_analysis.py --document-id <uuid>
 ```
 
-### Map regulatory changes to contracts
+### Seed demo contracts (required for alerts to appear)
 
-Upload your contracts first through the dashboard (`/contracts` → Upload) or via the API:
+The impact mapper can only generate alerts if there are contracts in the database to match against. Seed six representative contracts (loan, investment, onboarding/AML, derivative, data processing, fintech service) in one step:
+
+```bash
+# Via the Pipeline page in the dashboard (Step 00 · Setup)
+# or directly via the API:
+curl -X POST http://localhost:8000/api/v1/contracts/seed \
+  -H "X-API-Key: your-key-here"
+```
+
+This is **idempotent** — safe to run multiple times; existing contracts are skipped. Once seeded, you can add real contracts via upload:
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/contracts/upload \
@@ -249,6 +260,8 @@ curl -X POST http://localhost:8000/api/v1/contracts/upload \
   -F "contract_type=loan" \
   -F "area=Risk"
 ```
+
+### Map regulatory changes to contracts
 
 Then run impact mapping:
 
@@ -296,11 +309,14 @@ Open the dashboard at `http://localhost:5173`:
 
 | Page | Purpose |
 |------|---------|
-| **Dashboard** | Stats overview: documents, changes, unread alerts, pending reviews |
+| **Dashboard** | Stats overview: documents, changes, unread alerts, pending reviews; navy-gradient severity chart |
 | **Alerts** | Paginated feed of all impact alerts, click to open detail drawer with suggestions |
 | **Reviews** | All pending items in one place — Approve / Modify / Reject with notes |
 | **Documents** | Browse ingested documents, view detected changes, trigger re-analysis |
 | **Audit Trail** | Immutable log of every system action and reviewer decision |
+| **Pipeline** | Run the full data pipeline from the browser — Step 00 (seed contracts) → Step 01 (fetch) → Step 02 (analyze) → Step 03 (map impacts) — with a live activity log panel |
+
+The Pipeline page is the fastest way to go from zero data to populated alerts in a new environment.
 
 Export from any alert drawer (Excel or PDF), or download all alerts as a workbook:
 
@@ -352,12 +368,18 @@ celery -A src.worker beat --loglevel=info
 |--------|----------|---------------|-------------|
 | `GET` | `/api/v1/contracts/` | viewer | List uploaded contracts |
 | `POST` | `/api/v1/contracts/upload` | analyst | Upload a PDF or DOCX contract |
+| `POST` | `/api/v1/contracts/seed` | — | Seed six demo contracts (idempotent). Required once for alerts to generate. |
 
-### Ingestion
+### Ingestion & Pipeline
 
 | Method | Endpoint | Role required | Description |
 |--------|----------|---------------|-------------|
-| `POST` | `/api/v1/ingest/{source}` | analyst | Trigger scraping (`cnbv` or `sec`). Rate-limited: 10 req/min. |
+| `POST` | `/api/v1/ingest/` | analyst | Trigger scraping for all sources (async, 202) |
+| `POST` | `/api/v1/ingest/{source}` | analyst | Trigger scraping for `cnbv` or `sec` (async, 202). Rate-limited: 10 req/min. |
+| `POST` | `/api/v1/ingest/analyze` | analyst | Run NLP on all documents pending analysis (async, 202) |
+| `POST` | `/api/v1/ingest/map` | analyst | Map all unprocessed changes to contracts, generate alerts (async, 202) |
+
+> **Route ordering note:** `/analyze` and `/map` are registered before the `/{source}` wildcard so FastAPI matches them correctly. If you add new static pipeline routes, keep them above `/{source}` in `ingestion.py`.
 
 ### Export
 
@@ -465,6 +487,21 @@ python scripts/seed_cnbv.py
 
 Update `DOF_RSS_URL` in `src/ingestion/cnbv.py` when the DOF restores the feed.
 
+**Dashboard shows documents and changes but zero alerts**
+
+The impact mapper requires contracts in the database to match against. An empty contracts table causes every change to be skipped silently. Run the seed endpoint once:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/contracts/seed
+# or: open /pipeline in the dashboard → Step 00 · Setup → "Seed demo contracts"
+```
+
+After seeding, re-run impact mapping (`POST /api/v1/ingest/map` or Pipeline Step 03) to generate alerts from any already-analyzed documents.
+
+**`POST /api/v1/ingest/analyze` returns 400 "Unknown source 'analyze'"**
+
+The `/{source}` wildcard route was matching before the static `/analyze` route. Fixed by registering `/`, `/analyze`, and `/map` before `/{source}` in `src/api/routers/ingestion.py`. If you see this error, ensure you are running the latest version of the file.
+
 ---
 
 ## Architecture decisions
@@ -501,6 +538,7 @@ The ingest endpoints are low-volume (manual triggers or beat tasks), not a high-
 - [x] Sprint 5 — Human-in-the-Loop & Export
 - [x] Sprint 6 — Task integration (Jira/Asana), RBAC, pagination, performance indexes, rate limiting
 - [x] Multi-jurisdictional cross-mapping (SEC ↔ CNBV), zero LLM cost
+- [x] OPB brand system applied to dashboard (Fraunces / Plus Jakarta Sans, navy/gold, Pipeline page with live activity log)
 - [ ] Automated addendum drafting via Claude API
 - [ ] Predictive alerts from proposed rules
 - [ ] "Chat with Policy" — RAG interface for compliance officers

@@ -149,18 +149,12 @@ export function Documents() {
                         href={selectedDoc.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-colors hover:bg-opb-light"
-                        style={{ border: "1px solid var(--primary-30)", fontSize: "12px", color: "var(--primary)" }}
+                        className="btn btn-outline"
                       >
                         <ExternalLink size={11} /> Source
                       </a>
                     )}
-                    <button
-                      onClick={triggerAnalysis}
-                      disabled={analyzing}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium disabled:opacity-50 transition-opacity"
-                      style={{ background: "var(--primary)", color: "#fff", fontSize: "12px" }}
-                    >
+                    <button onClick={triggerAnalysis} disabled={analyzing} className="btn btn-primary">
                       <Play size={11} />
                       {analyzing ? "Queued…" : "Re-analyze"}
                     </button>

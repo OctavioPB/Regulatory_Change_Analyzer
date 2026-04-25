@@ -23,6 +23,40 @@ interface Page<T> {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Severity = "high" | "medium" | "low";
+export type DocType =
+  | "proposed_rule"
+  | "no_action_letter"
+  | "interim_rule"
+  | "final_rule"
+  | "guidance"
+  | "other";
+
+export interface TrendSignal {
+  id: string;
+  document_id: string;
+  doc_type: DocType;
+  domain: string;
+  signal_strength: number;
+  horizon_months: number;
+  predicted_effective_date: string | null;
+  key_themes: string[];
+  confidence_score: number;
+  extracted_at: string;
+}
+
+export interface DomainForecast {
+  domain: string;
+  signal_count: number;
+  avg_strength: number;
+  avg_confidence: number;
+  avg_horizon_months: number;
+}
+
+export interface TrendStats {
+  total_signals: number;
+  by_doc_type: Record<string, number>;
+  top_domain: string | null;
+}
 export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";
 export type ChangeType =
   | "new_requirement"
@@ -134,6 +168,8 @@ export const api = {
   },
 
   pipeline: {
+    seedContracts: () =>
+      request<{ detail: string; skipped: number }>("/contracts/seed", { method: "POST" }),
     ingest: (source?: string) =>
       source
         ? request<{ detail: string }>(`/ingest/${source}`, { method: "POST" })
@@ -142,6 +178,20 @@ export const api = {
       request<{ detail: string }>("/ingest/analyze", { method: "POST" }),
     mapImpacts: () =>
       request<{ detail: string }>("/ingest/map", { method: "POST" }),
+  },
+
+  trends: {
+    list: (params?: { doc_type?: string; domain?: string; min_confidence?: number }) => {
+      const qs = new URLSearchParams();
+      if (params?.doc_type) qs.set("doc_type", params.doc_type);
+      if (params?.domain) qs.set("domain", params.domain);
+      if (params?.min_confidence !== undefined) qs.set("min_confidence", String(params.min_confidence));
+      qs.set("page_size", "50");
+      return request<{ items: TrendSignal[]; total: number }>(`/trends/?${qs}`).then((p) => p.items);
+    },
+    forecast: () => request<DomainForecast[]>("/trends/forecast"),
+    stats: () => request<TrendStats>("/trends/stats"),
+    extractAll: () => request<{ detail: string }>("/trends/extract-all", { method: "POST" }),
   },
 
   export: {

@@ -61,6 +61,93 @@ async def upload_contract(
     return contract
 
 
+@router.post("/seed", status_code=201)
+async def seed_demo_contracts(db: AsyncSession = Depends(get_db)) -> dict:
+    """Seed the database with representative sample contracts for demo purposes.
+
+    Idempotent — skips contracts that already exist by name.
+    """
+    _DEMO = [
+        {
+            "name": "Master Investment Agreement — Fintech ABC",
+            "contract_type": "investment",
+            "area": "Legal",
+            "clauses": [
+                ("Clause 4.2", "The counterparty exposure limit shall not exceed 20% of the total portfolio value. Any modification to applicable leverage limits imposed by regulatory authorities shall trigger an automatic review of this clause."),
+                ("Clause 7.1", "Investment fund allocations must comply with the limits established by the applicable regulatory authority for mutual funds and investment vehicles, including any fintech-specific restrictions."),
+            ],
+        },
+        {
+            "name": "SOFOM XYZ Loan Portfolio Agreement",
+            "contract_type": "loan",
+            "area": "Risk",
+            "clauses": [
+                ("Clause 3.1", "Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation."),
+                ("Clause 5.4", "Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basilea III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority."),
+            ],
+        },
+        {
+            "name": "Client Onboarding and AML Policy",
+            "contract_type": "onboarding",
+            "area": "AML",
+            "clauses": [
+                ("Section 2.1", "Customer due diligence (CDD) and enhanced due diligence (EDD) procedures must comply with anti-money laundering (AML) and PLD regulations, including FATF/GAFI recommendations and applicable national legislation."),
+                ("Section 4.3", "Suspicious activity reports (SAR) and regulatory disclosure obligations must be submitted within the timeframes established by the applicable AML/PLD regulatory framework. All reporting thresholds shall be updated upon regulatory amendment."),
+            ],
+        },
+        {
+            "name": "ISDA Derivative Trading Master Agreement",
+            "contract_type": "derivative",
+            "area": "Treasury",
+            "clauses": [
+                ("Clause 6.1", "Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions follow Basel III standards."),
+                ("Clause 8.2", "Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates."),
+            ],
+        },
+        {
+            "name": "Data Processing and Privacy Agreement",
+            "contract_type": "data_processing",
+            "area": "IT",
+            "clauses": [
+                ("Clause 3.1", "All personal data processing activities must comply with applicable data protection and privacy regulations, including GDPR, LFPDP, and any sector-specific rules governing the handling of personal data in financial services."),
+                ("Clause 5.2", "Data subjects' rights and the obligations of the data controller shall be updated upon amendment of the applicable privacy regulatory framework. The data processor shall notify the controller of any regulatory change within 5 business days."),
+            ],
+        },
+        {
+            "name": "Fintech Electronic Payment Service Agreement",
+            "contract_type": "service",
+            "area": "Compliance",
+            "clauses": [
+                ("Clause 2.3", "Electronic payment processing and crowdfunding activities must comply with the Fintech/ITF Law and any regulations issued by the CNBV or Banxico governing electronic payment institutions and financial technology companies."),
+                ("Clause 6.1", "Regulatory reporting, disclosure obligations, and SAR filings shall be performed in accordance with the compliance framework established by the applicable fintech regulatory authority. Reporting thresholds are subject to amendment."),
+            ],
+        },
+    ]
+
+    existing_names = {
+        row[0]
+        for row in (await db.execute(select(Contract.name))).fetchall()
+    }
+    created = 0
+    for spec in _DEMO:
+        if spec["name"] in existing_names:
+            continue
+        contract = Contract(
+            name=spec["name"],
+            contract_type=spec["contract_type"],
+            area=spec["area"],
+            raw_text=" ".join(text for _, text in spec["clauses"]),
+        )
+        db.add(contract)
+        await db.flush()
+        for clause_ref, text in spec["clauses"]:
+            db.add(ContractClause(contract_id=contract.id, clause_ref=clause_ref, text=text))
+        created += 1
+
+    await db.commit()
+    return {"detail": f"{created} contract(s) seeded", "skipped": len(_DEMO) - created}
+
+
 def _split_into_clauses(text: str) -> list[str]:
     """Naive clause splitter: break on double newlines, keep chunks ≥ 50 chars."""
     chunks = [c.strip() for c in text.split("\n\n") if len(c.strip()) >= 50]

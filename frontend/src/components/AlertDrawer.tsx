@@ -62,30 +62,14 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <a
-              href={api.export.alertXlsx(alert.id)}
-              download
-              className="rounded-md p-1.5 transition-colors hover:bg-opb-light"
-              style={{ color: "var(--mid)" }}
-              title="Download Excel"
-            >
-              <Download size={15} />
+            <a href={api.export.alertXlsx(alert.id)} download className="btn btn-ghost" title="Download Excel">
+              <Download size={14} /> XLS
             </a>
-            <a
-              href={api.export.alertPdf(alert.id)}
-              download
-              className="rounded-md p-1.5 transition-colors hover:bg-opb-light"
-              style={{ color: "var(--mid)" }}
-              title="Download PDF"
-            >
-              <Download size={15} />
+            <a href={api.export.alertPdf(alert.id)} download className="btn btn-ghost" title="Download PDF">
+              <Download size={14} /> PDF
             </a>
-            <button
-              onClick={onClose}
-              className="rounded-md p-1.5 transition-colors hover:bg-opb-light ml-1"
-              style={{ color: "var(--mid)" }}
-            >
-              <X size={17} />
+            <button onClick={onClose} className="btn btn-ghost ml-1" style={{ padding: "7px 10px" }}>
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -162,13 +146,8 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
                   )}
 
                   {item.approval_status === "pending" && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        disabled={loading}
-                        onClick={() => submitReview(item, "approved")}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
-                        style={{ background: "#27B97C", color: "#fff", fontSize: "12px" }}
-                      >
+                    <div className="mt-3 flex gap-2 flex-wrap">
+                      <button disabled={loading} onClick={() => submitReview(item, "approved")} className="btn btn-success">
                         <CheckCircle size={12} /> Approve
                       </button>
                       <button
@@ -178,18 +157,12 @@ export function AlertDrawer({ alert, onClose, onReviewed }: Props) {
                             ? submitReview(item, "modified")
                             : setReviewing({ itemId: item.id, notes: "" })
                         }
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
-                        style={{ background: "var(--primary)", color: "#fff", fontSize: "12px" }}
+                        className="btn btn-primary"
                       >
                         <Pencil size={12} />
                         {reviewing?.itemId === item.id ? "Save" : "Modify"}
                       </button>
-                      <button
-                        disabled={loading}
-                        onClick={() => submitReview(item, "rejected")}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body font-medium transition-opacity disabled:opacity-50"
-                        style={{ background: "#E03448", color: "#fff", fontSize: "12px" }}
-                      >
+                      <button disabled={loading} onClick={() => submitReview(item, "rejected")} className="btn btn-danger">
                         <XCircle size={12} /> Reject
                       </button>
                     </div>
