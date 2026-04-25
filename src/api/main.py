@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.middleware.rate_limit import IngestRateLimitMiddleware
-from src.api.routers import alerts, audit, contracts, cross_mapping, dashboard, documents, export, health, ingestion, tasks, trends
+from src.api.routers import alerts, audit, contracts, cross_mapping, dashboard, documents, export, health, heatmap, ingestion, tasks, trends
 from src.config import settings
 from src.database import init_db
 
@@ -40,6 +40,7 @@ app.include_router(audit.router, prefix="/api/v1")
 app.include_router(tasks.router, prefix="/api/v1")
 app.include_router(cross_mapping.router, prefix="/api/v1")
 app.include_router(trends.router, prefix="/api/v1")
+app.include_router(heatmap.router, prefix="/api/v1")
 
 
 @app.on_event("startup")

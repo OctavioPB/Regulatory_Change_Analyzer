@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Bell, ClipboardCheck, FileText, ShieldCheck, Play, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Bell, ClipboardCheck, FileText, ShieldCheck, Play, TrendingUp, Flame } from "lucide-react";
 
 const nav = [
   { to: "/",         label: "Dashboard",   icon: LayoutDashboard },
@@ -7,6 +7,7 @@ const nav = [
   { to: "/reviews",  label: "Reviews",     icon: ClipboardCheck },
   { to: "/documents",label: "Documents",   icon: FileText },
   { to: "/audit",    label: "Audit Trail", icon: ShieldCheck },
+  { to: "/heatmap",  label: "Heatmap",     icon: Flame },
   { to: "/trends",   label: "Trends",      icon: TrendingUp },
   { to: "/pipeline", label: "Pipeline",    icon: Play },
 ];

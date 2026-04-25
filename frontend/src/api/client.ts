@@ -57,6 +57,29 @@ export interface TrendStats {
   by_doc_type: Record<string, number>;
   top_domain: string | null;
 }
+
+export interface DepartmentSummary {
+  department: string;
+  total: number;
+  high: number;
+  medium: number;
+  low: number;
+  recent_30d: number;
+  churn_score: number;
+}
+
+export interface MatrixCell {
+  department: string;
+  change_type: string;
+  count: number;
+  severity_score: number;
+}
+
+export interface MonthlyPoint {
+  department: string;
+  month: string;
+  count: number;
+}
 export type ApprovalStatus = "pending" | "approved" | "modified" | "rejected";
 export type ChangeType =
   | "new_requirement"
@@ -178,6 +201,12 @@ export const api = {
       request<{ detail: string }>("/ingest/analyze", { method: "POST" }),
     mapImpacts: () =>
       request<{ detail: string }>("/ingest/map", { method: "POST" }),
+  },
+
+  heatmap: {
+    departments: () => request<DepartmentSummary[]>("/heatmap/departments"),
+    matrix: () => request<MatrixCell[]>("/heatmap/matrix"),
+    trend: (months = 6) => request<MonthlyPoint[]>(`/heatmap/trend?months=${months}`),
   },
 
   trends: {

@@ -8,6 +8,7 @@ import { Reviews } from "./pages/Reviews";
 import { AuditLog } from "./pages/AuditLog";
 import { Pipeline } from "./pages/Pipeline";
 import { Trends } from "./pages/Trends";
+import { Heatmap } from "./pages/Heatmap";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/audit" element={<AuditLog />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/trends" element={<Trends />} />
+            <Route path="/heatmap" element={<Heatmap />} />
           </Routes>
         </div>
         <Footer />
