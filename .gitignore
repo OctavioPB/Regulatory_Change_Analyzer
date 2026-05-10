@@ -2,6 +2,10 @@
 .env
 .env.local
 
+# Planning and dev notes
+planning/
+dev_notes/
+
 # Python
 __pycache__/
 *.pyc
@@ -48,3 +52,9 @@ Thumbs.db
 *.bin
 *.pt
 *.ckpt
+
+# Insructions
+BRAND.md
+PLAN.md
+CLAUDE.md
+.gitignore

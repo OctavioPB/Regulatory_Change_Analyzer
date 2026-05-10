@@ -2,7 +2,7 @@
 
 An automated compliance tool that monitors regulatory publications from **CNBV** (Mexico's National Banking and Securities Commission) and the **SEC** (U.S. Securities and Exchange Commission), detects what changed between versions, maps the impact to your internal contracts and processes, and generates actionable recommendations — with a review workflow and PDF/Excel export for audit purposes.
 
-Built as a portfolio project demonstrating production-grade Python backend engineering: async FastAPI, SQLAlchemy 2.x, pgvector, NLP pipelines, RBAC, and a React dashboard styled with the **OPB brand system** (Fraunces + Plus Jakarta Sans, navy/gold palette).
+This automated compliance tool solves the growing challenge of managing complex, cross-border regulatory shifts by replacing manual tracking with real-time, AI-driven monitoring. By instantly connecting updates from the CNBV and SEC to your specific internal contracts and workflows, the platform eliminates the risk of human error and prevents costly non-compliance penalties. It streamlines the entire audit trail through built-in review cycles and easy exports, allowing legal and operations teams to focus on strategy rather than hunting for changes. Ultimately, this project is a high-value investment in risk mitigation, ensuring the organization stays ahead of shifting laws while significantly reducing the man-hours required for regulatory oversight.
 
 ---
 
