@@ -19,6 +19,9 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
+    # prefork pool uses named Win32 semaphores that are denied across spawned
+    # child processes on Windows — solo runs tasks in the main process instead
+    worker_pool="solo",
     beat_schedule={
         "scrape-all-sources": {
             "task": "src.worker.scrape_all_sources",

@@ -11,6 +11,7 @@ import { Trends } from "./pages/Trends";
 import { Heatmap } from "./pages/Heatmap";
 import { Chat } from "./pages/Chat";
 import { Addendum } from "./pages/Addendum";
+import { Info } from "./pages/Info";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/heatmap" element={<Heatmap />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/addendum" element={<Addendum />} />
+            <Route path="/info" element={<Info />} />
           </Routes>
         </div>
         <Footer />
