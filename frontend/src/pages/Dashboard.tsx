@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
 import { api, type DashboardStats, type ImpactAlert } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 import { StatsCard } from "../components/StatsCard";
 import { AlertsTable } from "../components/AlertsTable";
 import { AlertDrawer } from "../components/AlertDrawer";
@@ -42,15 +43,16 @@ export function Dashboard() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5">
+      <div className="hero-bg px-6 py-4">
+        <Eyebrow light>Regulatory Overview</Eyebrow>
         <h1
           className="font-display text-white"
-          style={{ fontSize: "32px", fontWeight: 400 }}
+          style={{ fontSize: "26px", fontWeight: 300 }}
         >
           Regulatory{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Intelligence</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Live view of monitored sources, detected changes, and pending compliance actions.
         </p>
       </div>
@@ -68,7 +70,7 @@ export function Dashboard() {
           <button onClick={load} className="btn btn-primary">Retry →</button>
         </div>
       ) : (
-        <div className="flex flex-col gap-8 px-8 py-8">
+        <div className="flex flex-col gap-6 px-6 py-5">
           {/* KPI row */}
           <div>
             <div className="flex items-start justify-between mb-4">

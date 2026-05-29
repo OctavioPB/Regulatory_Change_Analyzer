@@ -54,7 +54,4 @@ Thumbs.db
 *.ckpt
 
 # Insructions
-BRAND.md
-PLAN.md
-CLAUDE.md
 .gitignore

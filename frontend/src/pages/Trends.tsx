@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, TrendingUp } from "lucide-react";
 import { api, type DomainForecast, type TrendSignal, type TrendStats } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -141,12 +142,13 @@ export function Trends() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4">
+        <Eyebrow light>Predictive Analysis</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Trend{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Analysis</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Predictive signals from Proposed Rules and No-Action Letters — 6 to 12 months ahead.
         </p>
       </div>
@@ -164,7 +166,7 @@ export function Trends() {
           <button onClick={load} className="btn btn-primary">Retry →</button>
         </div>
       ) : (
-        <div className="flex flex-col gap-8 px-8 py-8">
+        <div className="flex flex-col gap-6 px-6 py-5">
 
           {/* KPI row */}
           <div>
@@ -225,7 +227,7 @@ export function Trends() {
                 Average regulatory signal strength per domain, sorted by intensity.
               </p>
               <div
-                className="rounded-xl bg-white p-6 shadow-sm"
+                className="rounded-xl p-6 shadow-sm" style={{ background: "var(--white)" }}
                 style={{ border: "1px solid var(--primary-10)" }}
               >
                 <div className="flex flex-col gap-4">

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Bot, User, ChevronDown, ChevronUp, BookOpen, FileText } from "lucide-react";
 import { api, type ChatCitation } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -294,14 +295,15 @@ export function Chat() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 52px)" }}>
+    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 44px)" }}>
       {/* Hero */}
-      <div className="hero-bg px-8 py-5 shrink-0">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4 shrink-0">
+        <Eyebrow light>RAG Assistant</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Chat with{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Policy</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Ask compliance questions. Every answer is grounded in your regulatory documents and contracts.
         </p>
       </div>
@@ -309,7 +311,7 @@ export function Chat() {
       <div className="section-divider shrink-0" />
 
       {/* Chat body */}
-      <div className="flex-1 px-8 py-6 flex flex-col gap-5">
+      <div className="flex-1 px-6 py-5 flex flex-col gap-4">
         {/* Suggested questions — shown only when no messages */}
         {isEmpty && (
           <div className="flex flex-col items-center gap-6 py-8">

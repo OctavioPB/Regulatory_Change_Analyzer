@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { CheckCircle, XCircle, Loader, Terminal } from "lucide-react";
 import { api } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 
 type StepStatus = "idle" | "running" | "done" | "error";
 
@@ -102,12 +103,13 @@ export function Pipeline() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4">
+        <Eyebrow light>Data Ingestion</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Data{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Pipeline</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Run each stage of the regulatory analysis pipeline from the browser.
         </p>
       </div>
@@ -115,7 +117,7 @@ export function Pipeline() {
       <div className="section-divider" />
 
       {/* Two-column body */}
-      <div className="px-8 py-8 grid gap-6" style={{ gridTemplateColumns: "420px 1fr" }}>
+      <div className="px-6 py-5 grid gap-5" style={{ gridTemplateColumns: "420px 1fr" }}>
 
         {/* Left: step cards */}
         <div className="flex flex-col gap-5">

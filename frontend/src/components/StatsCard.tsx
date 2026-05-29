@@ -8,7 +8,7 @@ interface Props {
 
 export function StatsCard({ label, value, sub }: Props) {
   return (
-    <div className="rounded-xl bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl shadow-sm overflow-hidden" style={{ background: "var(--white)" }}>
       <div className="accent-bar" />
       <div className="px-5 py-5 flex flex-col items-center text-center gap-1">
         <p

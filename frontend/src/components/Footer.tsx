@@ -2,7 +2,7 @@ export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer
-      className="shrink-0 px-8 py-6 flex items-center justify-between"
+      className="shrink-0 px-6 py-4 flex items-center justify-between"
       style={{ background: "var(--primary)", borderTop: "1px solid rgba(255,255,255,.08)" }}
     >
       {/* Left: monogram + name */}

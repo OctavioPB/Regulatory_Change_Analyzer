@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { api, type ImpactAlert } from "../api/client";
 import { AlertsTable } from "../components/AlertsTable";
 import { AlertDrawer } from "../components/AlertDrawer";
+import { Eyebrow } from "../components/Eyebrow";
 
 export function Alerts() {
   const [alerts, setAlerts] = useState<ImpactAlert[]>([]);
@@ -23,19 +24,20 @@ export function Alerts() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4">
+        <Eyebrow light>Impact Monitoring</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Impact{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Alerts</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Regulatory changes mapped to your contracts and processes.
         </p>
       </div>
 
       <div className="section-divider" />
 
-      <div className="px-8 py-8 flex flex-col gap-6">
+      <div className="px-6 py-5 flex flex-col gap-5">
         {/* Controls */}
         <div className="flex items-start justify-between">
           <div>

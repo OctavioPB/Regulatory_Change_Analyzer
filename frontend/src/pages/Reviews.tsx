@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, Pencil } from "lucide-react";
 import { api, type ApprovalStatus, type ImpactAlert, type ImpactItem } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 import { SeverityBadge } from "../components/SeverityBadge";
 import { StatusBadge } from "../components/StatusBadge";
 
@@ -46,9 +47,10 @@ export function Reviews() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5">
+      <div className="hero-bg px-6 py-4">
+        <Eyebrow light>Human Review</Eyebrow>
         <div className="flex items-baseline gap-3">
-          <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+          <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
             Pending{" "}
             <em className="italic" style={{ color: "var(--gold-light)" }}>Reviews</em>
           </h1>
@@ -61,14 +63,14 @@ export function Reviews() {
             </span>
           )}
         </div>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Approve, modify, or reject each suggested compliance action.
         </p>
       </div>
 
       <div className="section-divider" />
 
-      <div className="px-8 py-8 flex flex-col gap-6">
+      <div className="px-6 py-5 flex flex-col gap-5">
         <p className="eyebrow mb-1.5">Action items</p>
         <p className="font-body mb-2" style={{ fontSize: "13px", color: "var(--mid)" }}>
           Approve each suggestion as-is, modify it before accepting, or reject it entirely.

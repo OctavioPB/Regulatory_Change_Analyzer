@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { ExternalLink, Play } from "lucide-react";
 import { api, type RegulatoryDocument, type RegulatoryChange } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
@@ -45,12 +46,13 @@ export function Documents() {
   return (
     <div className="flex flex-col h-full">
       {/* Hero */}
-      <div className="hero-bg px-8 py-5 shrink-0">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4 shrink-0">
+        <Eyebrow light>Document Registry</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Regulatory{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Documents</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           {docs.length} ingested documents across all monitored sources.
         </p>
       </div>

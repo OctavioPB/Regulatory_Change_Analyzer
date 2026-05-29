@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  /* Brand colours */
   --primary:    #003366;
   --primary-80: #1A4D80;
   --primary-60: #336699;
@@ -14,22 +15,55 @@
   --mid:        #6B7280;
   --light:      #F4F6F9;
   --white:      #FFFFFF;
+
+  /* Semantic status colours — data signals only, never for structure */
+  --status-green:  #27B97C;
+  --status-red:    #E03448;
+  --status-orange: #F07020;
+  --status-purple: #7C4DBD;
+  --status-blue:   #003366;
+
+  /* Typography */
   --fd: 'Fraunces', Georgia, serif;
   --fb: 'Plus Jakarta Sans', sans-serif;
+
+  /* Spacing (8-point grid) */
+  --space-4:  4px;  --space-8:  8px;  --space-12: 12px;
+  --space-16: 16px; --space-24: 24px; --space-32: 32px;
+  --space-40: 40px; --space-48: 48px; --space-64: 64px;
+
+  /* Border radius */
+  --radius-sm:   6px;
+  --radius-md:  12px;
+  --radius-lg:  14px;
+  --radius-pill: 20px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 4px rgba(0,51,102,0.08);
+  --shadow-soft: 0 1px 6px rgba(0,51,102,0.09);
+
+  /* Layout */
+  --max-width-content:   1200px;
+  --max-width-dashboard: 1300px;
+  --nav-height: 44px;
 }
 
 @layer base {
   body {
     font-family: var(--fb);
-    font-size: 15px;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 1.65;
     background: var(--light);
     color: var(--dark);
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
+  /* Display font applies to page/section headings only — not h3/h4 */
+  h1, h2 {
     font-family: var(--fd);
+  }
+  h3, h4 {
+    font-family: var(--fb);
   }
 }
 
@@ -70,6 +104,28 @@
     width: 24px;
     height: 1px;
     background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  /* Light variant — use on dark (navy) hero backgrounds */
+  .eyebrow-light {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--fb);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold-light);
+  }
+
+  .eyebrow-light::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--gold-light);
     flex-shrink: 0;
   }
 
@@ -156,3 +212,5 @@
     background: var(--light);
   }
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }

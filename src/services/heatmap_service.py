@@ -1,99 +1,86 @@
-"""Risk heatmap aggregation — regulatory churn by business department."""
+"""Risk heatmap aggregation -- regulatory churn by business department."""
 import logging
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.contract import Contract
-from src.models.document import ChangeType, RegulatoryChange
-from src.models.impact import ImpactAlert, ImpactItem, Severity
+from src.models.document import ChangeType
+from src.models.impact import Severity
 
 logger = logging.getLogger(__name__)
 
-# ── Department catalogue ──────────────────────────────────────────────────────
+# ---- Department catalogue ----------------------------------------------------
 
-# Canonical departments shown in the heatmap (order preserved)
 DEPARTMENTS = ["AML", "Risk", "Compliance", "Legal", "Treasury", "IT"]
 
-# Fallback: map ChangeType to department for process-type impact items
-# (which have no contract → no area → need manual assignment)
 _CHANGE_TYPE_DEPT: dict[str, str] = {
-    ChangeType.new_requirement: "Compliance",
-    ChangeType.limit_modification: "Risk",
-    ChangeType.repeal: "Legal",
-    ChangeType.clarification: "Legal",
-    ChangeType.deadline: "Compliance",
-    ChangeType.other: "Compliance",
+    "new_requirement": "Compliance",
+    "limit_modification": "Risk",
+    "repeal": "Legal",
+    "clarification": "Legal",
+    "deadline": "Compliance",
+    "other": "Compliance",
 }
 
-# Severity weights for computing a single "churn score" per department
 _SEVERITY_WEIGHT: dict[str, float] = {
-    Severity.high: 3.0,
-    Severity.medium: 1.5,
-    Severity.low: 0.5,
+    "high": 3.0,
+    "medium": 1.5,
+    "low": 0.5,
 }
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# ---- Public API --------------------------------------------------------------
 
 async def get_department_summary(db: AsyncSession) -> list[dict]:
-    """Return per-department impact counts, severity breakdown, and churn score.
-
-    Merges contract-type impacts (joined through Contract.area) with
-    process-type impacts (department derived from change_type).
-    """
+    """Return per-department impact counts, severity breakdown, and churn score."""
     accum: dict[str, dict] = {
         dept: {"total": 0, "high": 0, "medium": 0, "low": 0, "recent_30d": 0}
         for dept in DEPARTMENTS
     }
-
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
 
-    # ── Contract-type impacts: join on affected_name = Contract.name ──────────
-    contract_q = await db.execute(
-        select(
-            Contract.area.label("dept"),
-            ImpactItem.severity,
-            ImpactAlert.created_at,
-        )
-        .join(ImpactItem, ImpactItem.affected_name == Contract.name)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .where(ImpactItem.impact_type == "contract")
-        .where(Contract.area.isnot(None))
-    )
-    for row in contract_q.fetchall():
-        dept = _normalise_dept(row.dept)
+    # Contract-type: join via affected_name = contracts.name
+    contract_rows = await db.execute(text("""
+        SELECT c.area         AS dept,
+               ii.severity    AS severity,
+               ia.created_at  AS created_at
+        FROM contracts c
+        INNER JOIN impact_items  ii ON ii.affected_name = c.name
+                                   AND ii.impact_type   = 'contract'
+        INNER JOIN impact_alerts ia ON ia.id = ii.alert_id
+        WHERE c.area IS NOT NULL
+    """))
+    for row in contract_rows.mappings():
+        dept = _normalise_dept(row["dept"])
         if dept not in accum:
             accum[dept] = {"total": 0, "high": 0, "medium": 0, "low": 0, "recent_30d": 0}
-        _tally(accum[dept], row.severity, row.created_at, cutoff)
+        _tally(accum[dept], row["severity"], row["created_at"], cutoff)
 
-    # ── Process-type impacts: derive dept from change_type ────────────────────
-    process_q = await db.execute(
-        select(
-            RegulatoryChange.change_type,
-            ImpactItem.severity,
-            ImpactAlert.created_at,
-        )
-        .join(ImpactItem, ImpactItem.change_id == RegulatoryChange.id)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .where(ImpactItem.impact_type == "process")
-    )
-    for row in process_q.fetchall():
-        dept = _CHANGE_TYPE_DEPT.get(row.change_type, "Compliance")
+    # Process-type: derive dept from change_type
+    process_rows = await db.execute(text("""
+        SELECT rc.change_type  AS change_type,
+               ii.severity     AS severity,
+               ia.created_at   AS created_at
+        FROM regulatory_changes rc
+        INNER JOIN impact_items  ii ON ii.change_id  = rc.id
+                                   AND ii.impact_type = 'process'
+        INNER JOIN impact_alerts ia ON ia.id = ii.alert_id
+    """))
+    for row in process_rows.mappings():
+        dept = _CHANGE_TYPE_DEPT.get(str(row["change_type"]), "Compliance")
         if dept not in accum:
             accum[dept] = {"total": 0, "high": 0, "medium": 0, "low": 0, "recent_30d": 0}
-        _tally(accum[dept], row.severity, row.created_at, cutoff)
+        _tally(accum[dept], row["severity"], row["created_at"], cutoff)
 
-    # ── Compute churn score and build output list ─────────────────────────────
-    max_weighted = 1.0  # avoid div-by-zero
+    # Compute churn score
+    max_weighted = 1.0
     results = []
     for dept, counts in accum.items():
         weighted = (
-            counts["high"] * _SEVERITY_WEIGHT[Severity.high]
-            + counts["medium"] * _SEVERITY_WEIGHT[Severity.medium]
-            + counts["low"] * _SEVERITY_WEIGHT[Severity.low]
+            counts["high"]   * _SEVERITY_WEIGHT["high"]
+            + counts["medium"] * _SEVERITY_WEIGHT["medium"]
+            + counts["low"]    * _SEVERITY_WEIGHT["low"]
         )
         if weighted > max_weighted:
             max_weighted = weighted
@@ -102,54 +89,48 @@ async def get_department_summary(db: AsyncSession) -> list[dict]:
     for r in results:
         r["churn_score"] = round(r.pop("_weighted") / max_weighted, 3)
 
-    # Sort by churn_score desc, then alphabetically
     results.sort(key=lambda x: (-x["churn_score"], x["department"]))
     return results
 
 
 async def get_matrix(db: AsyncSession) -> list[dict]:
-    """Return department × change_type matrix with impact counts.
-
-    Each row: {"department": str, "change_type": str, "count": int, "severity_score": float}
-    """
+    """Return department x change_type matrix with impact counts."""
     rows: dict[tuple[str, str], dict] = {}
 
     # Contract-type
-    q = await db.execute(
-        select(
-            Contract.area.label("dept"),
-            RegulatoryChange.change_type,
-            ImpactItem.severity,
-            func.count(ImpactItem.id).label("n"),
-        )
-        .join(ImpactItem, ImpactItem.affected_name == Contract.name)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .join(RegulatoryChange, RegulatoryChange.id == ImpactItem.change_id)
-        .where(ImpactItem.impact_type == "contract")
-        .where(Contract.area.isnot(None))
-        .group_by(Contract.area, RegulatoryChange.change_type, ImpactItem.severity)
-    )
-    for row in q.fetchall():
-        dept = _normalise_dept(row.dept)
-        key = (dept, row.change_type.value)
-        _add_matrix_row(rows, key, row.severity, row.n)
+    contract_rows = await db.execute(text("""
+        SELECT c.area          AS dept,
+               rc.change_type  AS change_type,
+               ii.severity     AS severity,
+               COUNT(*)        AS n
+        FROM contracts c
+        INNER JOIN impact_items     ii ON ii.affected_name = c.name
+                                      AND ii.impact_type   = 'contract'
+        INNER JOIN impact_alerts    ia ON ia.id  = ii.alert_id
+        INNER JOIN regulatory_changes rc ON rc.id = ii.change_id
+        WHERE c.area IS NOT NULL
+        GROUP BY c.area, rc.change_type, ii.severity
+    """))
+    for row in contract_rows.mappings():
+        dept = _normalise_dept(row["dept"])
+        key  = (dept, str(row["change_type"]))
+        _add_matrix_row(rows, key, str(row["severity"]), int(row["n"]))
 
     # Process-type
-    q2 = await db.execute(
-        select(
-            RegulatoryChange.change_type,
-            ImpactItem.severity,
-            func.count(ImpactItem.id).label("n"),
-        )
-        .join(ImpactItem, ImpactItem.change_id == RegulatoryChange.id)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .where(ImpactItem.impact_type == "process")
-        .group_by(RegulatoryChange.change_type, ImpactItem.severity)
-    )
-    for row in q2.fetchall():
-        dept = _CHANGE_TYPE_DEPT.get(row.change_type, "Compliance")
-        key = (dept, row.change_type.value)
-        _add_matrix_row(rows, key, row.severity, row.n)
+    process_rows = await db.execute(text("""
+        SELECT rc.change_type  AS change_type,
+               ii.severity     AS severity,
+               COUNT(*)        AS n
+        FROM regulatory_changes rc
+        INNER JOIN impact_items  ii ON ii.change_id  = rc.id
+                                   AND ii.impact_type = 'process'
+        INNER JOIN impact_alerts ia ON ia.id = ii.alert_id
+        GROUP BY rc.change_type, ii.severity
+    """))
+    for row in process_rows.mappings():
+        dept = _CHANGE_TYPE_DEPT.get(str(row["change_type"]), "Compliance")
+        key  = (dept, str(row["change_type"]))
+        _add_matrix_row(rows, key, str(row["severity"]), int(row["n"]))
 
     out = []
     for (dept, ct), data in rows.items():
@@ -165,49 +146,48 @@ async def get_matrix(db: AsyncSession) -> list[dict]:
 
 
 async def get_monthly_trend(db: AsyncSession, months: int = 6) -> list[dict]:
-    """Return department × month counts for the last N months.
-
-    Each row: {"department": str, "month": "YYYY-MM", "count": int}
-    """
+    """Return department x month counts for the last N months."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
 
-    # Contract-type
-    q = await db.execute(
-        select(
-            Contract.area.label("dept"),
-            func.to_char(ImpactAlert.created_at, "YYYY-MM").label("month"),
-            func.count(ImpactItem.id).label("n"),
-        )
-        .join(ImpactItem, ImpactItem.affected_name == Contract.name)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .where(ImpactItem.impact_type == "contract")
-        .where(Contract.area.isnot(None))
-        .where(ImpactAlert.created_at >= cutoff)
-        .group_by(Contract.area, func.to_char(ImpactAlert.created_at, "YYYY-MM"))
+    contract_rows = await db.execute(
+        text("""
+            SELECT c.area                                     AS dept,
+                   TO_CHAR(ia.created_at, 'YYYY-MM')         AS month,
+                   COUNT(*)                                   AS n
+            FROM contracts c
+            INNER JOIN impact_items  ii ON ii.affected_name = c.name
+                                       AND ii.impact_type   = 'contract'
+            INNER JOIN impact_alerts ia ON ia.id = ii.alert_id
+            WHERE c.area IS NOT NULL
+              AND ia.created_at >= :cutoff
+            GROUP BY c.area, TO_CHAR(ia.created_at, 'YYYY-MM')
+        """),
+        {"cutoff": cutoff},
     )
 
-    # Process-type
-    q2 = await db.execute(
-        select(
-            RegulatoryChange.change_type,
-            func.to_char(ImpactAlert.created_at, "YYYY-MM").label("month"),
-            func.count(ImpactItem.id).label("n"),
-        )
-        .join(ImpactItem, ImpactItem.change_id == RegulatoryChange.id)
-        .join(ImpactAlert, ImpactAlert.id == ImpactItem.alert_id)
-        .where(ImpactItem.impact_type == "process")
-        .where(ImpactAlert.created_at >= cutoff)
-        .group_by(RegulatoryChange.change_type, func.to_char(ImpactAlert.created_at, "YYYY-MM"))
+    process_rows = await db.execute(
+        text("""
+            SELECT rc.change_type                             AS change_type,
+                   TO_CHAR(ia.created_at, 'YYYY-MM')         AS month,
+                   COUNT(*)                                   AS n
+            FROM regulatory_changes rc
+            INNER JOIN impact_items  ii ON ii.change_id  = rc.id
+                                       AND ii.impact_type = 'process'
+            INNER JOIN impact_alerts ia ON ia.id = ii.alert_id
+            WHERE ia.created_at >= :cutoff
+            GROUP BY rc.change_type, TO_CHAR(ia.created_at, 'YYYY-MM')
+        """),
+        {"cutoff": cutoff},
     )
 
     monthly: dict[tuple[str, str], int] = {}
-    for row in q.fetchall():
-        k = (_normalise_dept(row.dept), row.month)
-        monthly[k] = monthly.get(k, 0) + row.n
-    for row in q2.fetchall():
-        dept = _CHANGE_TYPE_DEPT.get(row.change_type, "Compliance")
-        k = (dept, row.month)
-        monthly[k] = monthly.get(k, 0) + row.n
+    for row in contract_rows.mappings():
+        k = (_normalise_dept(row["dept"]), row["month"])
+        monthly[k] = monthly.get(k, 0) + int(row["n"])
+    for row in process_rows.mappings():
+        dept = _CHANGE_TYPE_DEPT.get(str(row["change_type"]), "Compliance")
+        k = (dept, row["month"])
+        monthly[k] = monthly.get(k, 0) + int(row["n"])
 
     return [
         {"department": dept, "month": month, "count": count}
@@ -215,33 +195,29 @@ async def get_monthly_trend(db: AsyncSession, months: int = 6) -> list[dict]:
     ]
 
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# ---- Internal helpers --------------------------------------------------------
 
 def _normalise_dept(raw: str | None) -> str:
     if not raw:
         return "General"
     stripped = raw.strip().title()
-    # Canonical mappings for common abbreviations / variants
-    _aliases = {
-        "Aml": "AML",
-        "It": "IT",
-    }
+    _aliases = {"Aml": "AML", "It": "IT"}
     return _aliases.get(stripped, stripped)
 
 
-def _tally(d: dict, severity: Severity, created_at: datetime, cutoff: datetime) -> None:
+def _tally(d: dict, severity, created_at, cutoff: datetime) -> None:
+    """Increment counters for one impact row."""
+    sev = severity.value if isinstance(severity, Severity) else str(severity)
     d["total"] += 1
-    d[severity.value] += 1
-    if created_at and created_at.replace(tzinfo=timezone.utc) >= cutoff:
-        d["recent_30d"] += 1
+    if sev in d:
+        d[sev] += 1
+    if created_at:
+        aware = created_at if getattr(created_at, "tzinfo", None) else created_at.replace(tzinfo=timezone.utc)
+        if aware >= cutoff:
+            d["recent_30d"] += 1
 
 
-def _add_matrix_row(
-    rows: dict,
-    key: tuple[str, str],
-    severity: Severity,
-    n: int,
-) -> None:
+def _add_matrix_row(rows: dict, key: tuple[str, str], severity: str, n: int) -> None:
     if key not in rows:
         rows[key] = {"count": 0, "weighted": 0.0}
     rows[key]["count"] += n

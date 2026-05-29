@@ -17,7 +17,7 @@ const nav = [
 export function Navbar() {
   return (
     <nav
-      className="h-[52px] sticky top-0 z-40 flex items-center justify-between px-6 shrink-0"
+      className="h-[44px] sticky top-0 z-40 flex items-center justify-between px-5 shrink-0"
       style={{
         background: "rgba(0,51,102,.97)",
         backdropFilter: "blur(12px)",
@@ -25,10 +25,10 @@ export function Navbar() {
       }}
     >
       {/* Left: monogram + nav links */}
-      <div className="flex items-center gap-7">
+      <div className="flex items-center gap-5">
         <span
           className="leading-none select-none"
-          style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: "20px", fontWeight: 300 }}
+          style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: "17px", fontWeight: 300 }}
         >
           <span style={{ color: "#ffffff" }}>O</span>
           <em style={{ color: "var(--gold-light)", fontStyle: "italic" }}>PB</em>
@@ -44,14 +44,14 @@ export function Navbar() {
                 isActive ? { color: "var(--gold)" } : undefined
               }
               className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium tracking-wide transition-colors border-b-2 ${
+                `flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium tracking-wide transition-colors border-b-2 ${
                   isActive
                     ? "border-gold"
                     : "text-white/50 border-transparent hover:text-white/80"
                 }`
               }
             >
-              <Icon size={12} strokeWidth={2} />
+              <Icon size={11} strokeWidth={2} />
               {label}
             </NavLink>
           ))}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FileSignature, Download, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { api, type ImpactAlert } from "../api/client";
+import { Eyebrow } from "../components/Eyebrow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -170,21 +171,22 @@ export function Addendum() {
   const hasDraft = draftText.length > 0;
 
   return (
-    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 52px)" }}>
+    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 44px)" }}>
       {/* Hero */}
-      <div className="hero-bg px-8 py-5 shrink-0">
-        <h1 className="font-display text-white" style={{ fontSize: "32px", fontWeight: 400 }}>
+      <div className="hero-bg px-6 py-4 shrink-0">
+        <Eyebrow light>Contract Management</Eyebrow>
+        <h1 className="font-display text-white" style={{ fontSize: "26px", fontWeight: 300 }}>
           Addendum{" "}
           <em className="italic" style={{ color: "var(--gold-light)" }}>Drafting</em>
         </h1>
-        <p className="mt-2 font-body text-white/50" style={{ fontSize: "14px" }}>
+        <p className="mt-1.5 font-body text-white/50" style={{ fontSize: "12px" }}>
           Select an impact alert and generate a complete contract addendum draft — ready for legal review.
         </p>
       </div>
 
       <div className="section-divider shrink-0" />
 
-      <div className="flex-1 px-8 py-6 flex flex-col gap-6">
+      <div className="flex-1 px-6 py-5 flex flex-col gap-5">
         {/* Alert selector */}
         <div
           className="rounded-xl px-6 py-5"
