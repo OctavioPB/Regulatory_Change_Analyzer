@@ -586,9 +586,8 @@ Current status: **249 unit + 18 integration + 10 frontend tests passing**.
 | `docker.yml` | changes to Dockerfile / deps | builds the image, smoke-tests the import, validates compose |
 | `codeql.yml` | push, PR, weekly | security analysis for Python and TypeScript |
 | `claude.yml` | `@claude` in an issue / PR comment (owner & collaborators only) | Claude answers or pushes a fix |
-| `claude-code-review.yml` | PR opened / updated (owner & collaborators only) | Claude reviews the diff with inline comments |
 
-The two Claude workflows need the [Claude GitHub App](https://github.com/apps/claude) installed and an `ANTHROPIC_API_KEY` repository secret. Dependabot (`.github/dependabot.yml`) opens weekly grouped updates for pip and npm.
+The Claude workflow needs the [Claude GitHub App](https://github.com/apps/claude) installed and an `ANTHROPIC_API_KEY` (or `CLAUDE_CODE_OAUTH_TOKEN`) repository secret; without it, it is skipped unless someone mentions `@claude`. Dependabot (`.github/dependabot.yml`) opens weekly grouped updates for pip and npm.
 
 ---
 

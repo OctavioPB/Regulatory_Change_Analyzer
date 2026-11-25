@@ -110,7 +110,7 @@ These are enforced by tests or by review. The full list is in [CLAUDE.md](../CLA
 | `ci.yml` | ruff; unit tests with coverage; integration tests on a `pgvector/pgvector:pg16` service (schema plus `alembic upgrade head`); frontend tests and build |
 | `codeql.yml` | CodeQL for Python and TypeScript |
 | `docker.yml` | Image build, an import smoke test, and `docker compose config` validation |
-| `claude.yml`, `claude-code-review.yml` | Claude Code on mentions and PR review |
+| `claude.yml` | Claude Code when someone mentions `@claude` (needs an `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` secret) |
 
 ## 7. Engineering decisions
 
