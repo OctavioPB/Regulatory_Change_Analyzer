@@ -25,7 +25,7 @@ const SUGGESTIONS = [
 
 // ── Citation card ─────────────────────────────────────────────────────────────
 
-function CitationCard({ c, index }: { c: ChatCitation; index: number }) {
+function CitationCard({ c }: { c: ChatCitation }) {
   const [open, setOpen] = useState(false);
   const isReg = c.type === "regulation";
 
@@ -163,7 +163,7 @@ function MessageBubble({ msg }: { msg: Message }) {
             {showCitations && (
               <div className="flex flex-col gap-1.5 w-full">
                 {msg.citations.map((c, i) => (
-                  <CitationCard key={`${c.ref_id}-${i}`} c={c} index={i} />
+                  <CitationCard key={`${c.ref_id}-${i}`} c={c} />
                 ))}
               </div>
             )}
@@ -219,6 +219,7 @@ export function Chat() {
 
     try {
       const res = await api.chat.stream(queryText.trim());
+      if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
       if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();
@@ -280,6 +281,10 @@ export function Chat() {
         )
       );
     } finally {
+      // Stream may end without a "done" event (server crash, proxy cut)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === assistantId && m.streaming ? { ...m, streaming: false } : m))
+      );
       setBusy(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }

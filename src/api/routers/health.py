@@ -1,3 +1,5 @@
+from importlib.util import find_spec
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,4 +21,5 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthOut:
     return HealthOut(
         status="ok" if db_status == "ok" else "degraded",
         db=db_status,
+        embeddings="available" if find_spec("sentence_transformers") else "disabled",
     )

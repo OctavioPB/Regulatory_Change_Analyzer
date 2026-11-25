@@ -56,7 +56,7 @@ async def main(document_id: str | None, change_id: str | None) -> None:
 
         else:
             # Process all documents that have changes but no impact alerts yet
-            from sqlalchemy import select, func, not_, exists
+            from sqlalchemy import select, not_, exists
             from src.models.document import RegulatoryDocument, RegulatoryChange
             from src.models.impact import ImpactAlert
 

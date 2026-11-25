@@ -1,11 +1,11 @@
 import hashlib
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import feedparser
 from bs4 import BeautifulSoup
 
-from src.ingestion.base import BaseScraper, RawDocument
+from src.ingestion.base import BaseScraper, RawDocument, parse_feed_date
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class CNBVScraper(BaseScraper):
                 source=self.source_name,
                 title=title,
                 url=link,
-                publication_date=pub_date or datetime.utcnow(),
+                publication_date=pub_date or datetime.now(timezone.utc),
                 # Populate raw_text from RSS summary so we have *something* even if
                 # the full-page fetch later fails.
                 raw_text=BeautifulSoup(summary, "lxml").get_text(" ", strip=True) if summary else None,
@@ -80,14 +80,4 @@ class CNBVScraper(BaseScraper):
 
     @staticmethod
     def _parse_date(date_str: str) -> datetime | None:
-        formats = [
-            "%a, %d %b %Y %H:%M:%S %z",
-            "%Y-%m-%dT%H:%M:%S%z",
-            "%a, %d %b %Y %H:%M:%S GMT",
-        ]
-        for fmt in formats:
-            try:
-                return datetime.strptime(date_str.strip(), fmt)
-            except ValueError:
-                continue
-        return None
+        return parse_feed_date(date_str)

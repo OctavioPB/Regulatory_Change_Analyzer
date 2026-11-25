@@ -1,27 +1,30 @@
-import uuid
+import asyncio
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.schemas import ContractIn, ContractOut
+from src.api.schemas import ContractOut
+from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.config import settings
 from src.database import get_db
-from src.mapping.embedder import embed_batch
 from src.models.contract import Contract, ContractClause
-from src.parsing.docx_parser import extract_text_from_docx
+from src.parsing.docx_parser import extract_text_from_docx_bytes
 from src.parsing.pdf_parser import extract_text_from_pdf_bytes
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
 
 
-@router.get("/", response_model=list[ContractOut])
+@router.get("/", response_model=list[ContractOut], dependencies=[RequireViewer])
 async def list_contracts(db: AsyncSession = Depends(get_db)) -> list[Contract]:
     result = await db.execute(select(Contract).order_by(Contract.name))
     return list(result.scalars().all())
 
 
-@router.post("/upload", response_model=ContractOut, status_code=201)
+@router.post("/upload", response_model=ContractOut, status_code=201, dependencies=[RequireAnalyst])
 async def upload_contract(
     file: UploadFile,
     name: str,
@@ -30,38 +33,43 @@ async def upload_contract(
     db: AsyncSession = Depends(get_db),
 ) -> Contract:
     """Upload a contract PDF or DOCX, extract text, split into clauses, and embed."""
-    content = await file.read()
-    filename = file.filename or ""
+    content = await file.read(settings.max_upload_bytes + 1)
+    if len(content) > settings.max_upload_bytes:
+        raise HTTPException(status_code=413, detail="File too large")
 
-    if filename.lower().endswith(".pdf"):
-        raw_text = extract_text_from_pdf_bytes(content)
-    elif filename.lower().endswith(".docx"):
-        tmp_path = settings.contracts_dir / filename
-        tmp_path.write_bytes(content)
-        raw_text = extract_text_from_docx(tmp_path)
-    else:
-        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
+    filename = (file.filename or "").lower()
+    try:
+        # Parsing is CPU-bound — keep it off the event loop. Never write the
+        # client-supplied filename to disk (path traversal).
+        if filename.endswith(".pdf"):
+            raw_text = await asyncio.to_thread(extract_text_from_pdf_bytes, content)
+        elif filename.endswith(".docx"):
+            raw_text = await asyncio.to_thread(extract_text_from_docx_bytes, content)
+        else:
+            raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not parse file: {exc}") from exc
 
     contract = Contract(name=name, contract_type=contract_type, area=area, raw_text=raw_text)
     db.add(contract)
     await db.flush()
 
     clause_texts = _split_into_clauses(raw_text)
-    if clause_texts:
-        embeddings = embed_batch(clause_texts)
-        for i, (clause_text, embedding) in enumerate(zip(clause_texts, embeddings)):
-            clause = ContractClause(
-                contract_id=contract.id,
-                clause_ref=f"Clause {i + 1}",
-                text=clause_text,
-                embedding=embedding,
-            )
-            db.add(clause)
+    embeddings = await _embed_or_none(clause_texts)
+    for i, clause_text in enumerate(clause_texts):
+        db.add(ContractClause(
+            contract_id=contract.id,
+            clause_ref=f"Clause {i + 1}",
+            text=clause_text,
+            embedding=embeddings[i] if embeddings else None,
+        ))
 
     return contract
 
 
-@router.post("/seed", status_code=201)
+@router.post("/seed", status_code=201, dependencies=[RequireAnalyst])
 async def seed_demo_contracts(db: AsyncSession = Depends(get_db)) -> dict:
     """Seed the database with representative sample contracts for demo purposes.
 
@@ -124,14 +132,15 @@ async def seed_demo_contracts(db: AsyncSession = Depends(get_db)) -> dict:
         },
     ]
 
-    existing_names = {
-        row[0]
-        for row in (await db.execute(select(Contract.name))).fetchall()
-    }
-    created = 0
-    for spec in _DEMO:
-        if spec["name"] in existing_names:
-            continue
+    existing_names = set((await db.execute(select(Contract.name))).scalars().all())
+    pending = [spec for spec in _DEMO if spec["name"] not in existing_names]
+
+    # Embed every new clause in one batch so semantic mapping and RAG work on seeds
+    all_texts = [text for spec in pending for _, text in spec["clauses"]]
+    embeddings = await _embed_or_none(all_texts)
+    emb_iter = iter(embeddings) if embeddings else None
+
+    for spec in pending:
         contract = Contract(
             name=spec["name"],
             contract_type=spec["contract_type"],
@@ -141,11 +150,27 @@ async def seed_demo_contracts(db: AsyncSession = Depends(get_db)) -> dict:
         db.add(contract)
         await db.flush()
         for clause_ref, text in spec["clauses"]:
-            db.add(ContractClause(contract_id=contract.id, clause_ref=clause_ref, text=text))
-        created += 1
+            db.add(ContractClause(
+                contract_id=contract.id,
+                clause_ref=clause_ref,
+                text=text,
+                embedding=next(emb_iter) if emb_iter else None,
+            ))
 
-    await db.commit()
-    return {"detail": f"{created} contract(s) seeded", "skipped": len(_DEMO) - created}
+    return {"detail": f"{len(pending)} contract(s) seeded", "skipped": len(_DEMO) - len(pending)}
+
+
+async def _embed_or_none(texts: list[str]) -> list[list[float]] | None:
+    """Batch-embed texts in a worker thread; None if the embedder is unavailable."""
+    if not texts:
+        return None
+    try:
+        from src.mapping.embedder import embed_batch
+
+        return await asyncio.to_thread(embed_batch, texts)
+    except Exception as exc:
+        logger.warning("Embedding unavailable — clauses stored without vectors: %s", exc)
+        return None
 
 
 def _split_into_clauses(text: str) -> list[str]:

@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-import pytest
 
 from src.models.impact import ApprovalStatus, ImpactAlert, ImpactItem, Severity
 from src.services.export_service import (

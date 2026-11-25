@@ -1,7 +1,6 @@
-import pytest
 
 from src.nlp.classifier import classify_change
-from src.nlp.comparator import TextDiff, compare_texts
+from src.nlp.comparator import compare_texts
 from src.nlp.extractor import extract_entities
 from src.models.document import ChangeType
 

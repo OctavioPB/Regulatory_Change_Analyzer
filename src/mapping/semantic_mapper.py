@@ -1,13 +1,12 @@
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
 
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.mapping.embedder import embed_text
-from src.models.contract import ContractClause
 from src.models.impact import Severity
 
 logger = logging.getLogger(__name__)
@@ -45,7 +44,7 @@ async def find_similar_clauses(
     Returns:
         List of ClauseMatch sorted by descending similarity.
     """
-    query_vector = embed_text(change_text)
+    query_vector = await asyncio.to_thread(embed_text, change_text)
 
     stmt = text(
         """

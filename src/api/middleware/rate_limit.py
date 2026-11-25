@@ -1,6 +1,6 @@
 """Simple in-memory sliding-window rate limiter for ingestion endpoints."""
 import time
-from collections import defaultdict
+from collections import deque
 
 from fastapi import Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -20,7 +20,7 @@ class IngestRateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._max = max_requests
         self._window = window_seconds
-        self._buckets: dict[str, list[float]] = defaultdict(list)
+        self._buckets: dict[str, deque[float]] = {}
 
     async def dispatch(self, request: Request, call_next):
         if (
@@ -31,10 +31,13 @@ class IngestRateLimitMiddleware(BaseHTTPMiddleware):
             now = time.monotonic()
             window_start = now - self._window
 
-            bucket = self._buckets[client_ip]
-            # Evict timestamps outside the current window (mutates in place)
+            # Drop buckets that have fully expired so memory doesn't grow per-IP forever
+            for ip in [ip for ip, b in self._buckets.items() if not b or b[-1] < window_start]:
+                del self._buckets[ip]
+
+            bucket = self._buckets.setdefault(client_ip, deque())
             while bucket and bucket[0] < window_start:
-                bucket.pop(0)
+                bucket.popleft()
 
             if len(bucket) >= self._max:
                 return Response(

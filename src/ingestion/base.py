@@ -1,12 +1,30 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
+
+_FEED_DATE_FORMATS = (
+    "%a, %d %b %Y %H:%M:%S %z",
+    "%Y-%m-%dT%H:%M:%S%z",
+    "%a, %d %b %Y %H:%M:%S GMT",
+)
+
+
+def parse_feed_date(date_str: str) -> datetime | None:
+    """Parse an RSS/Atom date into a timezone-aware datetime (UTC if unspecified)."""
+    for fmt in _FEED_DATE_FORMATS:
+        try:
+            parsed = datetime.strptime(date_str.strip(), fmt)
+        except ValueError:
+            continue
+        # "... GMT" parses naive, but every DB date column is timestamptz
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return None
 
 
 @dataclass

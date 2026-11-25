@@ -95,7 +95,6 @@ def test_get_current_role_dev_mode_no_key():
 
 
 def test_get_current_role_valid_key():
-    from fastapi import HTTPException
     from src.auth import dependencies
 
     keys_json = json.dumps({"sk-analyst": "analyst"})

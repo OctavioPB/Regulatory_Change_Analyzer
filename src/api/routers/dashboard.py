@@ -2,14 +2,15 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import RequireViewer
 from src.database import get_db
-from src.models.document import ChangeType, RegulatoryChange, RegulatoryDocument
-from src.models.impact import ImpactAlert, ImpactItem, Severity
+from src.models.document import RegulatoryChange, RegulatoryDocument
+from src.models.impact import ApprovalStatus, ImpactAlert, ImpactItem
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-@router.get("/stats")
+@router.get("/stats", dependencies=[RequireViewer])
 async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     """Return aggregate counts for the dashboard overview cards."""
 
@@ -45,7 +46,6 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     total_items = sum(items_by_severity.values())
 
     # Pending reviews
-    from src.models.impact import ApprovalStatus
     pending_reviews = await _scalar(
         db,
         select(func.count(ImpactItem.id)).where(

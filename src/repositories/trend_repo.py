@@ -1,7 +1,7 @@
 """CRUD operations for TrendSignal."""
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ async def upsert_signal(
         signal.predicted_effective_date = result.predicted_effective_date
         signal.key_themes = json.dumps(result.key_themes)
         signal.confidence_score = result.confidence_score
-        signal.extracted_at = datetime.utcnow()
+        signal.extracted_at = datetime.now(timezone.utc)
         return signal
 
     signal = TrendSignal(
@@ -107,4 +107,5 @@ async def count_by_doc_type(db: AsyncSession) -> dict[str, int]:
     """Return count of signals per doc_type."""
     stmt = select(TrendSignal.doc_type, func.count(TrendSignal.id)).group_by(TrendSignal.doc_type)
     rows = (await db.execute(stmt)).all()
-    return {str(r[0]): r[1] for r in rows}
+    # str(DocType.x) is "DocType.x" — use the enum value the frontend expects
+    return {getattr(r[0], "value", str(r[0])): r[1] for r in rows}

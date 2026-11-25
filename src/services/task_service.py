@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.integrations.task_manager import get_task_manager
-from src.models.impact import ImpactAlert, ImpactItem
+from src.models.impact import ImpactAlert
 from src.repositories import audit_repo
 
 logger = logging.getLogger(__name__)

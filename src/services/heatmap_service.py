@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.document import ChangeType
 from src.models.impact import Severity
 
 logger = logging.getLogger(__name__)

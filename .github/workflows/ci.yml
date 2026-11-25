@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+  backend-lint:
+    name: Backend · lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install "ruff>=0.4.0"
+      - run: ruff check src tests scripts alembic
+
+  backend-unit:
+    name: Backend · unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          # No [ml] extra: tests run with embeddings disabled (rules engine + keyword search)
+          pip install -e ".[dev]"
+      - name: Run unit tests
+        run: python -m pytest --cov=src --cov-report=term-missing:skip-covered --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-unit
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  backend-integration:
+    name: Backend · integration (Postgres + pgvector)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: rca_user
+          POSTGRES_PASSWORD: rca_pass
+          POSTGRES_DB: regulatory_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rca_user -d regulatory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The database name must end in _test — the suite TRUNCATEs every table
+      DATABASE_URL: postgresql+asyncpg://rca_user:rca_pass@localhost:5432/regulatory_test
+      DATABASE_URL_SYNC: postgresql://rca_user:rca_pass@localhost:5432/regulatory_test
+      ANTHROPIC_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+      - name: Create schema and apply migrations
+        run: |
+          python -c "import asyncio; from src.database import init_db; asyncio.run(init_db())"
+          alembic upgrade head
+      - name: Run integration tests
+        run: python -m pytest -m integration -v
+
+  frontend:
+    name: Frontend · test & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build # tsc type-check + vite production build

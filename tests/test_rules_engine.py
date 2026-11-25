@@ -1,6 +1,5 @@
 """Tests for the keyword rules engine."""
 
-import pytest
 
 from src.mapping.rules_engine import (
     RuleMatch,

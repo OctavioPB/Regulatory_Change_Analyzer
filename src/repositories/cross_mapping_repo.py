@@ -4,7 +4,6 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.mapping.cross_mapper import CrossCandidate
 from src.models.cross_mapping import CrossJurisdictionLink

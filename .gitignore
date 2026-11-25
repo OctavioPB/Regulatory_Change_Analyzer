@@ -6,6 +6,10 @@
 planning/
 dev_notes/
 
+# Node / frontend build
+node_modules/
+frontend/dist/
+
 # Python
 __pycache__/
 *.pyc

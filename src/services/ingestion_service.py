@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass, field
 
@@ -55,21 +56,19 @@ async def run(source_name: str, db: AsyncSession) -> IngestionResult:
     result = IngestionResult(source=key.upper())
     scraper = _SCRAPERS[key]()
 
+    # One HTTP client (and its connection pool) for the feed and every document
     try:
-        raw_docs = await scraper.fetch_latest()
-    except Exception as exc:
-        msg = f"fetch_latest() failed for {key}: {exc}"
-        logger.error(msg)
-        result.errors.append(msg)
-        return result
-    finally:
-        await scraper.close()
+        try:
+            raw_docs = await scraper.fetch_latest()
+        except Exception as exc:
+            msg = f"fetch_latest() failed for {key}: {exc}"
+            logger.error(msg)
+            result.errors.append(msg)
+            return result
 
-    result.fetched = len(raw_docs)
-    logger.info("%s: %d documents found in feed", key.upper(), result.fetched)
+        result.fetched = len(raw_docs)
+        logger.info("%s: %d documents found in feed", key.upper(), result.fetched)
 
-    scraper = _SCRAPERS[key]()
-    try:
         for raw_doc in raw_docs:
             success = await _process_one(scraper, raw_doc, db, result)
             if success:
@@ -137,7 +136,7 @@ async def _fetch_content(scraper: BaseScraper, raw_doc: RawDocument) -> tuple[st
         try:
             response = await scraper._get(url)
             pdf_bytes = response.content
-            raw_text = extract_text_from_pdf_bytes(pdf_bytes)
+            raw_text = await asyncio.to_thread(extract_text_from_pdf_bytes, pdf_bytes)
             saved = save_raw_file(raw_doc.source, raw_doc.external_id, pdf_bytes, "pdf")
             file_path_str = str(saved)
         except Exception as exc:

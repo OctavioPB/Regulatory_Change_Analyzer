@@ -225,6 +225,7 @@ async def test_upsert_link_creates_new():
 
     db.add.assert_called_once()
     db.flush.assert_called_once()
+    assert link.source_jurisdiction == candidate.source_jurisdiction
 
 
 @pytest.mark.asyncio

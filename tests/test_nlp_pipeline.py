@@ -1,11 +1,10 @@
 """Tests for the NLP pipeline — section splitter, comparator, extractor, pipeline."""
 
-import pytest
 
 from src.models.document import ChangeType
-from src.nlp.comparator import SectionDiff, compare_sections
-from src.nlp.extractor import extract_entities, extract_numeric_changes
-from src.nlp.pipeline import AnalysisResult, SectionChange, analyze
+from src.nlp.comparator import compare_sections
+from src.nlp.extractor import extract_numeric_changes
+from src.nlp.pipeline import analyze
 from src.nlp.section_splitter import split_into_sections
 
 

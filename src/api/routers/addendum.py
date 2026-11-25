@@ -1,14 +1,14 @@
 """Addendum drafting API — streaming LLM draft + PDF/DOCX export."""
 import logging
 import uuid
-from typing import AsyncIterator
+from typing import AsyncIterator, Literal
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.dependencies import RequireViewer
+from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.database import get_db
 from src.services import addendum_service
 
@@ -20,14 +20,14 @@ router = APIRouter(prefix="/addendum", tags=["addendum"])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class ExportBody(BaseModel):
-    draft_text: str
-    title: str
-    format: str  # "pdf" | "docx"
+    draft_text: str = Field(max_length=200_000)
+    title: str = Field(max_length=500)
+    format: Literal["pdf", "docx"] = "pdf"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.post("/draft/{alert_id}", dependencies=[RequireViewer])
+@router.post("/draft/{alert_id}", dependencies=[RequireAnalyst])
 async def draft_addendum(
     alert_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

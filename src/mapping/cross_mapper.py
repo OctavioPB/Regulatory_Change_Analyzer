@@ -15,15 +15,15 @@ that loads recent changes from other jurisdictions and checks domain overlap.
 """
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.mapping.rules_engine import _RULES, apply_rules
-from src.models.document import EMBEDDING_DIM, RegulatoryChange, RegulatoryDocument
+from src.models.document import RegulatoryChange, RegulatoryDocument
 
 logger = logging.getLogger(__name__)
 
@@ -153,17 +153,13 @@ async def _embedding_candidates(
             "top_k": top_k,
         },
     )
-    raw = rows.fetchall()
+    sims = {row.id: float(row.similarity) for row in rows.fetchall() if row.similarity >= _MIN_SIM}
+    if not sims:
+        return []
 
-    pairs: list[tuple[RegulatoryChange, float]] = []
-    for row in raw:
-        sim = float(row.similarity)
-        if sim < _MIN_SIM:
-            continue
-        target = await _load_change_with_doc(row.id, db)
-        if target is not None:
-            pairs.append((target, sim))
-    return pairs
+    # One query for every candidate instead of one round-trip per row
+    loaded = await _load_changes_with_doc(list(sims), db)
+    return [(c, sims[c.id]) for c in loaded]
 
 
 # ── Stage 1b: rules-only candidate retrieval (no embedding fallback) ──────────
@@ -178,34 +174,23 @@ async def _rules_only_candidates(
     result = await db.execute(
         select(RegulatoryChange)
         .join(RegulatoryDocument, RegulatoryChange.document_id == RegulatoryDocument.id)
+        # Eager-load: touching an unloaded relationship in an async session raises
+        .options(selectinload(RegulatoryChange.document))
         .where(RegulatoryDocument.source != source_jurisdiction)
         .where(RegulatoryChange.id != change.id)
         .order_by(RegulatoryChange.created_at.desc())
         .limit(limit)
     )
-    changes = list(result.scalars().all())
-
-    # Eager-load documents (they may be lazy)
-    pairs: list[tuple[RegulatoryChange, float]] = []
-    for c in changes:
-        if c.document is None:
-            c = await _load_change_with_doc(c.id, db)
-            if c is None:
-                continue
-        pairs.append((c, 0.0))
-    return pairs
+    return [(c, 0.0) for c in result.scalars().all()]
 
 
-async def _load_change_with_doc(
-    change_id, db: AsyncSession
-) -> RegulatoryChange | None:
-    from sqlalchemy.orm import selectinload
+async def _load_changes_with_doc(change_ids: list, db: AsyncSession) -> list[RegulatoryChange]:
     result = await db.execute(
         select(RegulatoryChange)
         .options(selectinload(RegulatoryChange.document))
-        .where(RegulatoryChange.id == change_id)
+        .where(RegulatoryChange.id.in_(change_ids))
     )
-    return result.scalar_one_or_none()
+    return list(result.scalars().all())
 
 
 # ── Analysis text generation ──────────────────────────────────────────────────

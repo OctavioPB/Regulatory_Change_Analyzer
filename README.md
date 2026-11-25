@@ -1,5 +1,16 @@
 # Regulatory Change Analyzer
 
+[![CI](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/codeql.yml/badge.svg)](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/codeql.yml)
+[![Docker](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/docker.yml/badge.svg)](https://github.com/OctavioPB/Regulatory_Change_Analyzer/actions/workflows/docker.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
+![React + Vite](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)
+![Claude](https://img.shields.io/badge/LLM-Claude-D97757?logo=anthropic&logoColor=white)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 An automated compliance tool that monitors regulatory publications from **CNBV** (Mexico's National Banking and Securities Commission) and the **SEC** (U.S. Securities and Exchange Commission), detects what changed between versions, maps the impact to your internal contracts and processes, and generates actionable recommendations — with a review workflow and PDF/Excel export for audit purposes.
 
 This automated compliance tool solves the growing challenge of managing complex, cross-border regulatory shifts by replacing manual tracking with real-time, AI-driven monitoring. By instantly connecting updates from the CNBV and SEC to your specific internal contracts and workflows, the platform eliminates the risk of human error and prevents costly non-compliance penalties. It streamlines the entire audit trail through built-in review cycles and easy exports, allowing legal and operations teams to focus on strategy rather than hunting for changes. Ultimately, this project is a high-value investment in risk mitigation, ensuring the organization stays ahead of shifting laws while significantly reducing the man-hours required for regulatory oversight.
@@ -49,7 +60,7 @@ This automated compliance tool solves the growing challenge of managing complex,
 | Task integration | Jira REST API v3, Asana REST API |
 | Export | reportlab (PDF), openpyxl (Excel) |
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
-| Testing | pytest, pytest-asyncio, hypothesis, 169 tests |
+| Testing | pytest, pytest-asyncio, hypothesis, Vitest — 180 unit + 14 integration + 5 frontend tests |
 | Infrastructure | Docker, docker compose (PostgreSQL + pgvector, Redis) |
 
 ---
@@ -121,8 +132,21 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
+# Core app + test tooling (~250 MB)
 pip install -e ".[dev]"
+
+# Optional: semantic features (~1.3 GB with CPU torch)
+pip install --index-url https://download.pytorch.org/whl/cpu torch
+pip install -e ".[dev,ml]"
 ```
+
+| Install | Impact mapping | Chat retrieval | Cross-jurisdiction |
+|---|---|---|---|
+| `.[dev]` | keyword rules engine (R001–R008) | keyword search over regulation text | rules-only (shared domains) |
+| `.[dev,ml]` | rules **+** clause-level semantic similarity | pgvector similarity search | embeddings + shared domains |
+
+`GET /health` reports `"embeddings": "available"` or `"disabled"`. The Docker image always includes `[ml]`.
+Documents analyzed while embeddings were disabled keep a `NULL` vector; re-analyze them after installing `[ml]` to include them in semantic search.
 
 ### 2. Configure environment variables
 
@@ -147,11 +171,11 @@ INGEST_RATE_LIMIT=10
 
 # Task integration (optional)
 TASK_MANAGER=none    # jira | asana | none
-JIRA_URL=https://yourorg.atlassian.net
-JIRA_USER=you@example.com
-JIRA_TOKEN=...
+JIRA_BASE_URL=https://yourorg.atlassian.net
+JIRA_EMAIL=you@example.com
+JIRA_API_TOKEN=...
 JIRA_PROJECT_KEY=COMP
-# ASANA_TOKEN=...
+# ASANA_ACCESS_TOKEN=...
 # ASANA_PROJECT_GID=...
 ```
 
@@ -164,6 +188,9 @@ docker compose up -d
 This starts:
 - PostgreSQL 16 with the `pgvector` extension on port **5432**
 - Redis 7 on port **6379**
+
+To also run the API and the Celery worker (with the beat scheduler) in containers:
+`docker compose --profile app up -d --build`.
 
 ### 4. Initialize the database schema
 
@@ -329,10 +356,10 @@ curl "http://localhost:8000/api/v1/export/alerts/<alert-id>.pdf" -o alert.pdf
 
 ```bash
 # Start the Celery worker
-celery -A src.worker worker --loglevel=info
+celery -A src.worker.celery_app worker --loglevel=info
 
 # Start the beat scheduler (runs ingestion daily)
-celery -A src.worker beat --loglevel=info
+celery -A src.worker.celery_app beat --loglevel=info
 ```
 
 ---
@@ -430,9 +457,31 @@ pytest tests/test_rbac.py -v
 
 # With coverage
 pytest tests/ --cov=src --cov-report=term-missing
+
+# Integration tests: real Postgres + pgvector through the HTTP API.
+# The DB name MUST end in _test — every test truncates all tables.
+docker run -d --rm --name rca-it-db -e POSTGRES_USER=rca_user -e POSTGRES_PASSWORD=rca_pass \
+  -e POSTGRES_DB=regulatory_test -p 55432:5432 pgvector/pgvector:pg16
+DATABASE_URL=postgresql+asyncpg://rca_user:rca_pass@localhost:55432/regulatory_test \
+  pytest -m integration
+
+# Frontend
+cd frontend && npm test && npm run build
 ```
 
-Current status: **169 tests passing**.
+Current status: **180 unit + 14 integration + 5 frontend tests passing**.
+
+### Continuous integration (`.github/workflows/`)
+
+| Workflow | Runs on | What it does |
+|---|---|---|
+| `ci.yml` | every push / PR | ruff lint, unit tests with coverage, integration tests against a pgvector service, frontend tests + production build |
+| `docker.yml` | changes to Dockerfile / deps | builds the image, smoke-tests the import, validates compose |
+| `codeql.yml` | push, PR, weekly | security analysis for Python and TypeScript |
+| `claude.yml` | `@claude` in an issue / PR comment (owner & collaborators only) | Claude answers or pushes a fix |
+| `claude-code-review.yml` | PR opened / updated (owner & collaborators only) | Claude reviews the diff with inline comments |
+
+The two Claude workflows need the [Claude GitHub App](https://github.com/apps/claude) installed and an `ANTHROPIC_API_KEY` repository secret. Dependabot (`.github/dependabot.yml`) opens weekly grouped updates for pip and npm.
 
 ---
 
@@ -548,7 +597,7 @@ The ingest endpoints are low-volume (manual triggers or beat tasks), not a high-
 
 ## License
 
-MIT — free for personal and commercial use.
+[MIT](LICENSE) © 2026 Octavio Pérez Bravo — free for personal and commercial use.
 
 ---
 

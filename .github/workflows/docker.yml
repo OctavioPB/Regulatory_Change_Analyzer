@@ -1,0 +1,38 @@
+name: Docker image
+
+# Only when the image definition changes — the build installs torch and is slow
+on:
+  push:
+    branches: [master]
+    paths: [Dockerfile, .dockerignore, pyproject.toml, docker-compose.yml]
+  pull_request:
+    paths: [Dockerfile, .dockerignore, pyproject.toml, docker-compose.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: rca-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test — app imports and routes register
+        run: |
+          docker run --rm rca-api:ci python -c "from src.api.main import app; print(len(app.routes), 'routes')"
+          # The image includes the [ml] extra — embeddings must import
+          docker run --rm rca-api:ci python -c "import src.mapping.embedder, src.mapping.semantic_mapper; print('ml ok')"
+      - name: Validate compose file
+        run: |
+          cp .env.example .env
+          docker compose --profile app config --quiet

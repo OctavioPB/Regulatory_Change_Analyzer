@@ -4,10 +4,10 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
-T = TypeVar("T")
-
 from src.models.document import ChangeType
 from src.models.impact import ApprovalStatus, Severity
+
+T = TypeVar("T")
 
 
 # ── Regulatory Documents ──────────────────────────────────────────────────────
@@ -120,4 +120,6 @@ class Page(BaseModel, Generic[T]):
 class HealthOut(BaseModel):
     status: str
     db: str = "ok"
+    # "available" with the [ml] extra installed, else "disabled" (rules-only mapping)
+    embeddings: str = "available"
     version: str = "0.1.0"

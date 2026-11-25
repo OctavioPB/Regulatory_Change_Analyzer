@@ -4,7 +4,7 @@ from typing import AsyncIterator
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import RequireViewer
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 # ── Request / response schemas ────────────────────────────────────────────────
 
 class ChatQuery(BaseModel):
-    query: str
+    query: str = Field(min_length=1, max_length=4000)
 
 
 class CitationOut(BaseModel):

@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.auth.dependencies import RequireComplianceOfficer
+from src.auth.dependencies import RequireComplianceOfficer, RequireViewer
 from src.config import settings
 from src.database import get_db
 from src.services import task_service
@@ -30,7 +30,7 @@ async def push_tasks(
     return {"detail": f"{len(pushed)} task(s) created", "tasks": pushed}
 
 
-@router.get("/config")
+@router.get("/config", dependencies=[RequireViewer])
 async def task_config() -> dict:
     """Return the current task manager configuration (non-sensitive)."""
     return {

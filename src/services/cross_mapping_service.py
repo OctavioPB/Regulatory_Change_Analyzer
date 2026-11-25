@@ -18,8 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.mapping.cross_mapper import find_cross_links
-from src.models.cross_mapping import CrossJurisdictionLink
-from src.models.document import RegulatoryChange, RegulatoryDocument
+from src.models.document import RegulatoryChange
 from src.repositories import audit_repo, cross_mapping_repo
 
 logger = logging.getLogger(__name__)

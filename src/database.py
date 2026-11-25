@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 engine = create_async_engine(
     settings.database_url,
-    echo=settings.app_env == "development",
+    echo=settings.db_echo,
     pool_pre_ping=True,
 )
 
@@ -34,8 +34,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Create all tables and enable the pgvector extension."""
+    from sqlalchemy import text
+
     import src.models  # noqa: F401 — registers all ORM models with Base.metadata
     async with engine.begin() as conn:
-        await conn.execute(__import__("sqlalchemy").text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database initialized")

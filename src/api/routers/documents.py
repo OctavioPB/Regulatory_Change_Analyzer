@@ -5,7 +5,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.background import run_with_session
 from src.api.schemas import Page, RegulatoryChangeOut, RegulatoryDocumentOut
+from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.database import get_db
 from src.models.document import RegulatoryChange, RegulatoryDocument
 from src.services import nlp_service
@@ -13,7 +15,7 @@ from src.services import nlp_service
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
-@router.get("/", response_model=Page[RegulatoryDocumentOut])
+@router.get("/", response_model=Page[RegulatoryDocumentOut], dependencies=[RequireViewer])
 async def list_documents(
     source: str | None = None,
     page: int = Query(1, ge=1),
@@ -43,21 +45,22 @@ async def list_documents(
     )
 
 
-@router.get("/{document_id}", response_model=RegulatoryDocumentOut)
+@router.get("/{document_id}", response_model=RegulatoryDocumentOut, dependencies=[RequireViewer])
 async def get_document(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> RegulatoryDocument:
-    result = await db.execute(
-        select(RegulatoryDocument).where(RegulatoryDocument.id == document_id)
-    )
-    doc = result.scalar_one_or_none()
+    doc = await db.get(RegulatoryDocument, document_id)
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 
 
-@router.get("/{document_id}/changes", response_model=list[RegulatoryChangeOut])
+@router.get(
+    "/{document_id}/changes",
+    response_model=list[RegulatoryChangeOut],
+    dependencies=[RequireViewer],
+)
 async def get_document_changes(
     document_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -71,18 +74,17 @@ async def get_document_changes(
     return list(result.scalars().all())
 
 
-@router.post("/{document_id}/analyze", status_code=202)
+@router.post("/{document_id}/analyze", status_code=202, dependencies=[RequireAnalyst])
 async def trigger_analysis(
     document_id: uuid.UUID,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Trigger NLP analysis for a document asynchronously."""
-    result = await db.execute(
-        select(RegulatoryDocument).where(RegulatoryDocument.id == document_id)
-    )
-    doc = result.scalar_one_or_none()
-    if doc is None:
+    exists_id = (
+        await db.execute(select(RegulatoryDocument.id).where(RegulatoryDocument.id == document_id))
+    ).scalar_one_or_none()
+    if exists_id is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
     background_tasks.add_task(_run_analysis, document_id)
@@ -90,7 +92,7 @@ async def trigger_analysis(
 
 
 async def _run_analysis(document_id: uuid.UUID) -> None:
-    from src.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        await nlp_service.analyze_document(document_id, db)
-        await db.commit()
+    await run_with_session(
+        f"analyze:{document_id}",
+        lambda db: nlp_service.analyze_document(document_id, db),
+    )

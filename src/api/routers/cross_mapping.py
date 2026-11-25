@@ -3,11 +3,14 @@ import math
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.background import run_with_session
 from src.api.schemas import CrossLinkOut, Page
 from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.database import get_db
+from src.models.document import RegulatoryChange
 from src.repositories import cross_mapping_repo
 from src.services import cross_mapping_service
 
@@ -55,9 +58,6 @@ async def scan_change(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Trigger a cross-jurisdictional scan for a single change (async)."""
-    from sqlalchemy import select
-    from src.models.document import RegulatoryChange
-
     result = await db.execute(
         select(RegulatoryChange.id).where(RegulatoryChange.id == change_id)
     )
@@ -78,14 +78,11 @@ async def scan_all(background_tasks: BackgroundTasks) -> dict:
 # ── Background runners ────────────────────────────────────────────────────────
 
 async def _run_scan(change_id: uuid.UUID) -> None:
-    from src.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        await cross_mapping_service.scan_change(change_id, db)
-        await db.commit()
+    await run_with_session(
+        f"cross-scan:{change_id}",
+        lambda db: cross_mapping_service.scan_change(change_id, db),
+    )
 
 
 async def _run_scan_all() -> None:
-    from src.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        await cross_mapping_service.scan_all_changes(db)
-        await db.commit()
+    await run_with_session("cross-scan-all", cross_mapping_service.scan_all_changes)

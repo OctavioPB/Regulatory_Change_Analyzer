@@ -1,8 +1,7 @@
 """Trend signal extraction from Proposed Rules and No-Action Letters."""
-import json
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
@@ -208,9 +207,11 @@ def _estimate_horizon(
             year_match = re.search(r"\d{4}", m.group(0))
             if year_match:
                 year = int(year_match.group(0))
-                if 2025 <= year <= 2030:
+                pub_aware = pub_date if pub_date.tzinfo else pub_date.replace(tzinfo=timezone.utc)
+                # Plausible forward-looking window relative to publication
+                if pub_aware.year <= year <= pub_aware.year + 6:
                     pred = datetime(year, 6, 1, tzinfo=timezone.utc)
-                    months = max(1, (pred - pub_date.replace(tzinfo=timezone.utc)).days // 30)
+                    months = max(1, (pred - pub_aware).days // 30)
                     return months, pred
 
     # Fallback heuristics by doc_type

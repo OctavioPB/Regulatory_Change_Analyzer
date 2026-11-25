@@ -2,7 +2,13 @@ import logging
 from functools import lru_cache
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+
+try:
+    from sentence_transformers import SentenceTransformer
+except ImportError as exc:  # pragma: no cover — depends on the install
+    raise ImportError(
+        "Embeddings need the optional ML dependencies: pip install -e \".[ml]\""
+    ) from exc
 
 from src.config import settings
 

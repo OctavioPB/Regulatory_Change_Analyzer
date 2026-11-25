@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import RequireViewer
 from src.database import get_db
 from src.repositories import audit_repo
 
@@ -23,10 +24,10 @@ class AuditLogOut(BaseModel):
     created_at: datetime
 
 
-@router.get("/", response_model=list[AuditLogOut])
+@router.get("/", response_model=list[AuditLogOut], dependencies=[RequireViewer])
 async def list_audit_logs(
     entity_type: str | None = Query(default=None, description="Filter by entity type"),
-    limit: int = Query(default=100, le=500),
+    limit: int = Query(default=100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
 ) -> list:
     """Return recent audit log entries, newest first."""

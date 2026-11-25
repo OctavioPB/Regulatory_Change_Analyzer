@@ -1,7 +1,7 @@
 """Tests for paginated list endpoints and Page schema."""
 import math
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

@@ -1,16 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.auth.dependencies import RequireComplianceOfficer
 from src.database import get_db
 from src.models.impact import ImpactAlert
 from src.services import export_service
 
-router = APIRouter(prefix="/export", tags=["export"])
+router = APIRouter(prefix="/export", tags=["export"], dependencies=[RequireComplianceOfficer])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

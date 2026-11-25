@@ -227,8 +227,8 @@ export function Trends() {
                 Average regulatory signal strength per domain, sorted by intensity.
               </p>
               <div
-                className="rounded-xl p-6 shadow-sm" style={{ background: "var(--white)" }}
-                style={{ border: "1px solid var(--primary-10)" }}
+                className="rounded-xl p-6 shadow-sm"
+                style={{ background: "var(--white)", border: "1px solid var(--primary-10)" }}
               >
                 <div className="flex flex-col gap-4">
                   {forecast.slice(0, 8).map((row) => {

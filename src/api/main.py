@@ -1,4 +1,6 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,20 +8,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.middleware.rate_limit import IngestRateLimitMiddleware
 from src.api.routers import addendum, alerts, audit, chat, contracts, cross_mapping, dashboard, documents, export, health, heatmap, ingestion, tasks, trends
 from src.config import settings
-from src.database import init_db
+from src.database import engine, init_db
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    await init_db()
+    logger.info("API started")
+    yield
+    await engine.dispose()
+
 
 app = FastAPI(
     title="Regulatory Change Analyzer",
     description="Automated monitoring and impact analysis of regulatory changes",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
+_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in production via settings
-    allow_credentials=True,
+    allow_origins=_origins,
+    # Browsers reject credentialed requests against a wildcard origin
+    allow_credentials="*" not in _origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -43,9 +57,3 @@ app.include_router(trends.router, prefix="/api/v1")
 app.include_router(heatmap.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
 app.include_router(addendum.router, prefix="/api/v1")
-
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    await init_db()
-    logger.info("API started")

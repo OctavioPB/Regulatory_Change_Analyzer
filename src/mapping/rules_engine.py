@@ -38,7 +38,7 @@ _RULES: list[dict] = [
     {
         "id": "R003",
         "keywords": [
-            r"\blandc?\b", r"\blavado\b", r"\bPLD\b", r"\banti-money\b",
+            r"\blaundering\b", r"\blavado\b", r"\bPLD\b", r"\banti-money\b",
             r"\bAML\b", r"\bFATF\b", r"\bGAFI\b",
         ],
         "contract_types": ["onboarding", "service"],
@@ -176,9 +176,15 @@ def contracts_targeted_by_rules(matches: list[RuleMatch]) -> tuple[set[str], set
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+# Compile each keyword once at import instead of on every apply_rules() call
+_COMPILED: dict[str, re.Pattern] = {
+    pat: re.compile(pat, re.IGNORECASE) for rule in _RULES for pat in rule["keywords"]
+}
+
+
 def _first_match(text: str, patterns: list[str]) -> str | None:
     """Return the first pattern that matches, or None."""
     for pat in patterns:
-        if re.search(pat, text, re.IGNORECASE):
+        if _COMPILED[pat].search(text):
             return pat
     return None

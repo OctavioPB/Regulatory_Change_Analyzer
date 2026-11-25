@@ -86,14 +86,16 @@ export function Addendum() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.alerts.list(false).then((a) => {
-      setAlerts(a);
-      if (preselectedId) {
-        const found = a.find((x) => x.id === preselectedId) ?? null;
-        setSelectedAlert(found);
-      }
-      setLoadingAlerts(false);
-    });
+    api.alerts
+      .list(false)
+      .then((a) => {
+        setAlerts(a);
+        if (preselectedId) {
+          setSelectedAlert(a.find((x) => x.id === preselectedId) ?? null);
+        }
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoadingAlerts(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -110,6 +112,7 @@ export function Addendum() {
 
     try {
       const res = await api.addendum.stream(selectedAlert.id);
+      if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
       if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();

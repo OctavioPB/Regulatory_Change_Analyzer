@@ -41,3 +41,17 @@ def extract_text_from_docx(file_path: str | Path) -> str:
     text = "\n".join(parts)
     logger.debug("Extracted %d chars from %s", len(text), path.name)
     return text
+
+
+def extract_text_from_docx_bytes(data: bytes) -> str:
+    """Extract plain text from raw .docx bytes without touching the filesystem."""
+    import io
+
+    doc = Document(io.BytesIO(data))
+    parts = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    for table in doc.tables:
+        for row in table.rows:
+            row_text = "\t".join(cell.text.strip() for cell in row.cells)
+            if row_text.strip():
+                parts.append(row_text)
+    return "\n".join(parts)

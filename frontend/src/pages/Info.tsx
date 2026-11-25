@@ -415,14 +415,6 @@ function DataModelDiagram() {
     { id: "contract",label: "Contract",             fields: "name · contract_type · area",                        x: 20,  y: 140, w: 200, h: 60 },
     { id: "clause",  label: "ContractClause",       fields: "clause_ref · text · embedding (384-dim)",           x: 480, y: 140, w: 200, h: 60 },
   ];
-  const rels = [
-    { x1: 120,  y1: 80, x2: 120,  y2: 140, label: "has many clauses" },
-    { x1: 220,  y1: 50, x2: 250,  y2: 50,  label: "has many changes" },
-    { x1: 450,  y1: 50, x2: 480,  y2: 50,  label: "has many alerts" },
-    { x1: 350,  y1: 80, x2: 350,  y2: 140, label: "has many items" },
-    { x1: 480,  y1: 50, x2: 490,  y2: 140, label: "" },
-    { x1: 450,  y1: 170, x2: 480, y2: 170, label: "optionally has clause" },
-  ];
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
       <defs>

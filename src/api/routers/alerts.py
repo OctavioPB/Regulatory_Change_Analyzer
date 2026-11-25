@@ -25,9 +25,9 @@ async def list_alerts(
     _: None = RequireViewer,
 ) -> Page[ImpactAlertOut]:
     """Return paginated impact alerts, optionally filtered to unread ones."""
-    base_stmt = select(ImpactAlert).where(
-        ImpactAlert.is_read.is_(False) if unread_only else True
-    )
+    base_stmt = select(ImpactAlert)
+    if unread_only:
+        base_stmt = base_stmt.where(ImpactAlert.is_read.is_(False))
     total: int = (await db.execute(select(func.count()).select_from(base_stmt.subquery()))).scalar_one()
 
     stmt = (
@@ -47,7 +47,7 @@ async def list_alerts(
     )
 
 
-@router.get("/{alert_id}", response_model=ImpactAlertOut)
+@router.get("/{alert_id}", response_model=ImpactAlertOut, dependencies=[RequireViewer])
 async def get_alert(alert_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> ImpactAlert:
     stmt = (
         select(ImpactAlert)
@@ -71,7 +71,9 @@ async def review_item(
     _: None = RequireComplianceOfficer,
 ) -> dict:
     """Submit a compliance officer's review decision on an impact item."""
-    result = await db.execute(select(ImpactItem).where(ImpactItem.id == item_id))
+    result = await db.execute(
+        select(ImpactItem).where(ImpactItem.id == item_id, ImpactItem.alert_id == alert_id)
+    )
     item = result.scalar_one_or_none()
     if item is None:
         raise HTTPException(status_code=404, detail="Impact item not found")

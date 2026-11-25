@@ -8,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.background import run_with_session
 from src.api.schemas import Page
 from src.auth.dependencies import RequireAnalyst, RequireViewer
 from src.database import get_db
@@ -133,14 +134,11 @@ async def extract_all(background_tasks: BackgroundTasks) -> dict:
 # ── Background runners ────────────────────────────────────────────────────────
 
 async def _run_extract_single(document_id: uuid.UUID) -> None:
-    from src.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        await trend_service.extract_signals_from_document(document_id, db)
-        await db.commit()
+    await run_with_session(
+        f"trend-extract:{document_id}",
+        lambda db: trend_service.extract_signals_from_document(document_id, db),
+    )
 
 
 async def _run_extract_all() -> None:
-    from src.database import AsyncSessionLocal
-    async with AsyncSessionLocal() as db:
-        await trend_service.extract_all_signals(db)
-        await db.commit()
+    await run_with_session("trend-extract-all", trend_service.extract_all_signals)

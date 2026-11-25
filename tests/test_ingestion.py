@@ -2,7 +2,6 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
-import feedparser
 
 from src.ingestion.base import RawDocument
 from src.ingestion.cnbv import CNBVScraper

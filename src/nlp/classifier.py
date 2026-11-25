@@ -1,5 +1,4 @@
 import logging
-import re
 
 from src.models.document import ChangeType
 

@@ -1,7 +1,4 @@
-import io
 import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 
 def test_extract_text_from_pdf_file_not_found():

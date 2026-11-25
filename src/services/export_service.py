@@ -7,8 +7,9 @@ and reviewer decisions.
 import io
 import logging
 from datetime import datetime, timezone
+from xml.sax.saxutils import escape as _esc
 
-from src.models.impact import ImpactAlert, ImpactItem, Severity
+from src.models.impact import ImpactAlert, Severity
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ def export_alerts_xlsx(alerts: list[ImpactAlert]) -> bytes:
         Raw bytes of the .xlsx file.
     """
     from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.styles import Font, PatternFill
     from openpyxl.utils import get_column_letter
 
     wb = Workbook()
@@ -267,22 +268,20 @@ def export_alert_pdf(alert: ImpactAlert) -> bytes:
     story.append(Spacer(1, 0.2 * cm))
 
     for idx, item in enumerate(alert.items, 1):
-        sev_color = _SEV_RL[item.severity]
-
         story.append(
             Paragraph(
                 f'<font color="#{_SEV_RL[item.severity].hexval()[2:]}" size="10"><b>'
                 f"[{item.severity.value.upper()}]</b></font> "
-                f"<b>{item.affected_name}</b>"
-                + (f" · <i>{item.affected_ref}</i>" if item.affected_ref else ""),
+                f"<b>{_esc(item.affected_name)}</b>"
+                + (f" · <i>{_esc(item.affected_ref)}</i>" if item.affected_ref else ""),
                 normal,
             )
         )
-        story.append(Paragraph(f"<b>Type:</b> {item.impact_type}", small))
+        story.append(Paragraph(f"<b>Type:</b> {_esc(item.impact_type)}", small))
         story.append(Paragraph(f"<b>Status:</b> {item.approval_status.value}", small))
-        story.append(Paragraph(f"<b>Suggestion:</b> {item.suggestion}", normal))
+        story.append(Paragraph(f"<b>Suggestion:</b> {_esc(item.suggestion)}", normal))
         if item.reviewer_notes:
-            story.append(Paragraph(f"<b>Reviewer notes:</b> {item.reviewer_notes}", small))
+            story.append(Paragraph(f"<b>Reviewer notes:</b> {_esc(item.reviewer_notes)}", small))
         if idx < len(alert.items):
             story.append(HRFlowable(width="100%", thickness=0.3, color=colors.HexColor("#e5e7eb")))
             story.append(Spacer(1, 0.2 * cm))

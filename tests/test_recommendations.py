@@ -1,4 +1,3 @@
-import pytest
 
 from src.models.document import ChangeType
 from src.models.impact import Severity

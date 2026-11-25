@@ -1,17 +1,19 @@
 """Regulatory RAG service — retrieval-augmented generation over regulatory documents."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass
+from html import escape as _esc
 from typing import AsyncIterator
 
-import anthropic
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
-from src.models.document import RegulatoryChange, RegulatoryDocument
+from src.services.llm import get_client, response_text
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,11 @@ logger = logging.getLogger(__name__)
 _TOP_K_CHANGES  = 5   # regulatory change chunks to retrieve
 _TOP_K_CLAUSES  = 3   # contract clause chunks to retrieve
 _MIN_SIM        = 0.35 # minimum cosine similarity to include a chunk
+
+# Grounded Q&A over a small retrieved context — medium (the Opus 5.5 default)
+# is the right depth; set explicitly so a model change doesn't shift it silently.
+_EFFORT = "medium"
+_REFUSAL_ANSWER = "The model declined to answer this question."
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
@@ -90,16 +97,16 @@ async def query(user_question: str, db: AsyncSession) -> ChatResponse:
             citations=citations,
         )
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
+    message = await get_client().messages.create(
         model=settings.llm_model,
-        max_tokens=1024,
+        max_tokens=16000,  # thinking tokens count against this; 1024 truncated answers
+        output_config={"effort": _EFFORT},
         system=_SYSTEM_PROMPT,
         messages=[
             {"role": "user", "content": f"<context>\n{context_xml}\n</context>\n\n{user_question}"},
         ],
     )
-    answer = message.content[0].text if message.content else ""
+    answer = _REFUSAL_ANSWER if message.stop_reason == "refusal" else response_text(message)
     tokens = message.usage.input_tokens + message.usage.output_tokens
 
     return ChatResponse(answer=answer, citations=citations, tokens_used=tokens)
@@ -153,11 +160,11 @@ async def stream_query(
         yield _sse("done")
         return
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     try:
-        with client.messages.stream(
+        async with get_client().messages.stream(
             model=settings.llm_model,
-            max_tokens=1024,
+            max_tokens=16000,
+            output_config={"effort": _EFFORT},
             system=_SYSTEM_PROMPT,
             messages=[
                 {
@@ -166,11 +173,15 @@ async def stream_query(
                 }
             ],
         ) as stream:
-            for text_chunk in stream.text_stream:
+            async for text_chunk in stream.text_stream:
                 yield _sse("token", text=text_chunk)
+            final = await stream.get_final_message()
+        if final.stop_reason == "refusal":
+            yield _sse("error", message=_REFUSAL_ANSWER)
+            return
     except Exception as exc:
-        logger.error("Claude streaming error: %s", exc)
-        yield _sse("error", message=str(exc))
+        logger.exception("Claude streaming error")
+        yield _sse("error", message=f"LLM request failed: {type(exc).__name__}")
         return
 
     yield _sse("done")
@@ -188,7 +199,7 @@ async def _retrieve(query_text: str, db: AsyncSession) -> list[ContextChunk]:
 
     try:
         from src.mapping.embedder import embed_text as _embed
-        query_vec = _embed(query_text)
+        query_vec = await asyncio.to_thread(_embed, query_text)
         changes = await _search_changes(db, query_vec)
         clauses = await _search_clauses(db, query_vec)
     except Exception as exc:
@@ -279,32 +290,56 @@ async def _search_clauses(db: AsyncSession, query_vec: list[float]):
     return result.fetchall()
 
 
+_STOPWORDS = {
+    "what", "which", "when", "where", "does", "have", "with", "about", "that", "this",
+    "there", "their", "from", "into", "should", "would", "could", "need", "changed",
+    "cuál", "cuáles", "qué", "como", "cómo", "para", "sobre", "esta", "este", "tiene",
+}
+
+
+def _keywords(query_text: str, limit: int = 6) -> list[str]:
+    """Meaningful words of a question: punctuation stripped, stopwords dropped."""
+    seen: list[str] = []
+    for w in re.findall(r"\w+", query_text.lower()):
+        if len(w) > 3 and w not in _STOPWORDS and w not in seen:
+            seen.append(w)
+    return seen[:limit]
+
+
 async def _text_search_changes(db: AsyncSession, query_text: str):
-    """ILIKE fallback: search regulatory_changes.summary when no embeddings exist."""
-    words = [w.strip() for w in query_text.split() if len(w.strip()) > 3][:5]
+    """ILIKE fallback when no embeddings exist, ranked by how many keywords match.
+
+    Searches the regulation text itself, not only the auto-generated summary
+    (which is just "Artículo N: new section added" and rarely matches).
+    """
+    words = _keywords(query_text)
     if not words:
         return []
 
     stmt = text(
         """
-        SELECT
-            rc.article_ref,
-            rc.summary,
-            rc.new_text,
-            rd.title  AS doc_title,
-            rd.source,
-            rd.publication_date,
-            0.5       AS sim
-        FROM regulatory_changes rc
-        JOIN regulatory_documents rd ON rd.id = rc.document_id
-        WHERE rc.summary ILIKE :pattern
-           OR rd.title   ILIKE :pattern
-        ORDER BY rd.publication_date DESC
+        SELECT * FROM (
+            SELECT
+                rc.article_ref,
+                rc.summary,
+                rc.new_text,
+                rd.title  AS doc_title,
+                rd.source,
+                rd.publication_date,
+                0.5       AS sim,
+                (SELECT count(*) FROM unnest(CAST(:patterns AS text[])) AS p
+                  WHERE rc.new_text ILIKE p OR rc.summary ILIKE p OR rd.title ILIKE p) AS hits
+            FROM regulatory_changes rc
+            JOIN regulatory_documents rd ON rd.id = rc.document_id
+        ) ranked
+        WHERE hits > 0
+        ORDER BY hits DESC, publication_date DESC
         LIMIT :top_k
         """
     )
-    pattern = f"%{words[0]}%"
-    result = await db.execute(stmt, {"pattern": pattern, "top_k": _TOP_K_CHANGES})
+    # \w includes "_", an ILIKE single-char wildcard — escape it (backslash is the default escape)
+    patterns = [f"%{w.replace('_', chr(92) + '_')}%" for w in words]
+    result = await db.execute(stmt, {"patterns": patterns, "top_k": _TOP_K_CHANGES})
     return result.fetchall()
 
 
@@ -319,8 +354,8 @@ def _build_context(chunks: list[ContextChunk]) -> tuple[str, list[Citation]]:
         if c.chunk_type == "regulation":
             tag = f'REG-{c.ref_id}'
             lines.append(
-                f'<regulation ref="{tag}" source="{c.source}" '
-                f'title="{c.title}" article="{c.article_ref}" '
+                f'<regulation ref="{tag}" source="{_esc(c.source)}" '
+                f'title="{_esc(c.title)}" article="{_esc(c.article_ref)}" '
                 f'date="{c.publication_date or "unknown"}">'
             )
             lines.append(c.excerpt)
@@ -328,8 +363,8 @@ def _build_context(chunks: list[ContextChunk]) -> tuple[str, list[Citation]]:
         else:
             tag = f'CON-{c.ref_id}'
             lines.append(
-                f'<contract ref="{tag}" name="{c.title}" '
-                f'area="{c.source}" clause="{c.article_ref}">'
+                f'<contract ref="{tag}" name="{_esc(c.title)}" '
+                f'area="{_esc(c.source)}" clause="{_esc(c.article_ref)}">'
             )
             lines.append(c.excerpt)
             lines.append("</contract>")

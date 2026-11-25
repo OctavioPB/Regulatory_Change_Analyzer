@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # LLM
     anthropic_api_key: str = ""
-    llm_model: str = "claude-sonnet-4-6"
+    llm_model: str = "claude-opus-5-5"
 
     # Storage
     data_dir: Path = Path("./data")
@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     secret_key: str = "change-this-in-production"
+    # SQL echo is very noisy and slows every request — opt-in only
+    db_echo: bool = False
+    # Comma-separated list of allowed CORS origins ("*" = any, without credentials)
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    # Max upload size for contract files (bytes)
+    max_upload_bytes: int = 20 * 1024 * 1024
 
     # RBAC — JSON map of {"api-key": "role"}, empty = dev mode (admin)
     api_keys: str = "{}"

@@ -1,10 +1,9 @@
 const BASE = "/api/v1";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    ...options,
-  });
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${body}`);
@@ -189,7 +188,7 @@ export const api = {
   documents: {
     list: (source?: string) =>
       request<Page<RegulatoryDocument>>(
-        source ? `/documents/?source=${source}` : "/documents/"
+        source ? `/documents/?source=${encodeURIComponent(source)}` : "/documents/"
       ).then((p) => p.items),
     get: (id: string) => request<RegulatoryDocument>(`/documents/${id}`),
     changes: (id: string) => request<RegulatoryChange[]>(`/documents/${id}/changes`),
@@ -267,7 +266,7 @@ export const api = {
   audit: {
     list: (entityType?: string, limit = 100) =>
       request<AuditEntry[]>(
-        `/audit/?limit=${limit}` + (entityType ? `&entity_type=${entityType}` : "")
+        `/audit/?limit=${limit}` + (entityType ? `&entity_type=${encodeURIComponent(entityType)}` : "")
       ),
   },
 };

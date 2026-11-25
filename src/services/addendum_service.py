@@ -2,16 +2,19 @@
 from __future__ import annotations
 
 import io
+import json
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import AsyncIterator
+from xml.sax.saxutils import escape as _xml_escape
 
-import anthropic
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
+from src.services.llm import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -121,48 +124,53 @@ async def stream_draft(
     """Stream a Claude-generated addendum as SSE events.
 
     Yields:
-        data: {"type": "meta",    "contract": str, "doc_title": str}
+        data: {"type": "meta",    "contract_name": str, "doc_title": str}
         data: {"type": "token",   "text": str}
         data: {"type": "done"}
         data: {"type": "error",   "message": str}
     """
-    import json
-
     contexts = await fetch_context(alert_id, db)
     if not contexts:
-        yield f"data: {json.dumps({'type': 'error', 'message': 'No contract-type impact items found for this alert.'})}\n\n"
+        yield _sse("error", message="No contract-type impact items found for this alert.")
         return
 
     # Draft one addendum per contract (usually one, but may be multiple)
-    for ctx in contexts:
-        meta = {"type": "meta", "contract": ctx.contract_name, "doc_title": ctx.primary_doc_title}
-        yield f"data: {json.dumps(meta)}\n\n"
-
-        prompt = _build_prompt(ctx)
+    for idx, ctx in enumerate(contexts):
+        yield _sse("meta", contract_name=ctx.contract_name, doc_title=ctx.primary_doc_title)
+        if idx > 0:
+            # Separate consecutive addenda inside the single draft text
+            yield _sse("token", text="\n----\n\n")
 
         if not settings.anthropic_api_key:
-            fallback = _fallback_draft(ctx)
-            for line in fallback.split("\n"):
-                yield f"data: {json.dumps({'type': 'token', 'text': line + chr(10)})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            yield _sse("token", text=_fallback_draft(ctx))
             continue
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         try:
-            with client.messages.stream(
+            async with get_client().messages.stream(
                 model=settings.llm_model,
-                max_tokens=2048,
+                # Thinking tokens count against max_tokens; streaming avoids timeouts
+                max_tokens=32000,
+                # Formal legal drafting: worth a deeper pass than the medium default
+                output_config={"effort": "high"},
                 system=_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": _build_prompt(ctx)}],
             ) as stream:
-                for chunk in stream.text_stream:
-                    yield f"data: {json.dumps({'type': 'token', 'text': chunk})}\n\n"
+                async for chunk in stream.text_stream:
+                    yield _sse("token", text=chunk)
+                final = await stream.get_final_message()
+            if final.stop_reason == "refusal":
+                yield _sse("error", message="The model declined to draft this addendum.")
+                return
         except Exception as exc:
-            logger.error("Claude streaming error in addendum draft: %s", exc)
-            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+            logger.exception("Claude streaming error in addendum draft")
+            yield _sse("error", message=f"LLM request failed: {type(exc).__name__}")
             return
 
-    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+    yield _sse("done")
+
+
+def _sse(event_type: str, **kwargs) -> str:
+    return f"data: {json.dumps({'type': event_type, **kwargs}, ensure_ascii=False)}\n\n"
 
 
 def export_pdf(draft_text: str, title: str) -> bytes:
@@ -211,7 +219,7 @@ def export_pdf(draft_text: str, title: str) -> bytes:
     story.append(Spacer(1, 0.3 * cm))
 
     # Title
-    story.append(Paragraph(title.upper(), title_style))
+    story.append(Paragraph(_xml_escape(title.upper()), title_style))
     story.append(Paragraph(
         f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         ParagraphStyle("meta", parent=styles["Normal"], fontSize=8, textColor=colors.gray, spaceAfter=12),
@@ -220,35 +228,21 @@ def export_pdf(draft_text: str, title: str) -> bytes:
     story.append(Spacer(1, 0.4 * cm))
 
     # Body: split on ---- separators and article headings
-    for block in draft_text.split("----"):
-        block = block.strip()
-        if not block:
+    blocks = [b.strip() for b in _SEPARATOR_RE.split(draft_text) if b.strip()]
+    for i, block in enumerate(blocks):
+        if i > 0:
             story.append(HRFlowable(width="100%", thickness=0.3, color=colors.HexColor("#d1d5db")))
             story.append(Spacer(1, 0.2 * cm))
-            continue
 
-        lines = block.split("\n")
-        for line in lines:
+        for line in block.split("\n"):
             line = line.strip()
             if not line:
                 story.append(Spacer(1, 0.15 * cm))
                 continue
-
-            # Detect section headings (ALL CAPS lines, ARTICLE / WHEREAS / NOW THEREFORE)
-            upper = line.upper()
-            is_heading = (
-                line.startswith("ARTICLE")
-                or line.startswith("WHEREAS")
-                or line.startswith("NOW THEREFORE")
-                or line.startswith("IN WITNESS WHEREOF")
-                or (line == line.upper() and len(line) > 4 and len(line) < 80)
-            )
-            if is_heading:
-                story.append(Paragraph(line, heading_style))
-            else:
-                # Escape XML special chars for ReportLab
-                safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                story.append(Paragraph(safe, body_style))
+            # ReportLab parses a mini-XML: an unescaped '&' or '<' (e.g. "AT&T",
+            # "< 20%") aborts the whole PDF build — escape headings and body alike.
+            style = heading_style if _is_heading(line) else body_style
+            story.append(Paragraph(_xml_escape(line), style))
 
     # Footer disclaimer
     story.append(Spacer(1, 0.5 * cm))
@@ -277,7 +271,6 @@ def export_docx(draft_text: str, title: str) -> bytes:
     """
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.oxml.ns import qn
     from docx.shared import Pt, RGBColor
 
     document = Document()
@@ -316,34 +309,24 @@ def export_docx(draft_text: str, title: str) -> bytes:
     document.add_paragraph()  # spacer
 
     # ── Body ──────────────────────────────────────────────────────────────────
-    for block in draft_text.split("----"):
+    for block in _SEPARATOR_RE.split(draft_text):
         block = block.strip()
         if not block:
-            document.add_paragraph()
             continue
-
-        lines = block.split("\n")
-        for line in lines:
+        for line in block.split("\n"):
             line = line.strip()
             if not line:
                 document.add_paragraph()
                 continue
-
-            is_heading = (
-                line.startswith("ARTICLE")
-                or line.startswith("WHEREAS")
-                or line.startswith("NOW THEREFORE")
-                or line.startswith("IN WITNESS WHEREOF")
-                or (line == line.upper() and len(line) > 4 and len(line) < 80)
-            )
-
-            if is_heading:
+            if _is_heading(line):
                 h = document.add_heading(line, level=2)
                 for run in h.runs:
                     run.font.color.rgb = navy
             else:
                 p = document.add_paragraph(line)
-                p.runs[0].font.size = Pt(9.5) if p.runs else None
+                if p.runs:
+                    p.runs[0].font.size = Pt(9.5)
+        document.add_paragraph()  # section gap
 
     # ── Disclaimer ────────────────────────────────────────────────────────────
     document.add_paragraph()
@@ -363,6 +346,18 @@ def export_docx(draft_text: str, title: str) -> bytes:
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
+# A line made only of 4+ dashes separates sections (matches the UI preview)
+_SEPARATOR_RE = re.compile(r"^\s*-{4,}\s*$", re.MULTILINE)
+_HEADING_PREFIXES = ("ARTICLE", "WHEREAS", "NOW THEREFORE", "IN WITNESS WHEREOF")
+
+
+def _is_heading(line: str) -> bool:
+    """ALL-CAPS short lines and the standard legal openers render as headings."""
+    return line.startswith(_HEADING_PREFIXES) or (
+        line == line.upper() and any(c.isalpha() for c in line) and 4 < len(line) < 80
+    )
+
 
 async def _query_items(alert_id: str, db: AsyncSession):
     """Fetch ImpactItems with full join context for an alert."""
@@ -399,11 +394,11 @@ async def _query_items(alert_id: str, db: AsyncSession):
 def _build_prompt(ctx: AddendumContext) -> str:
     """Format the addendum context into a structured prompt for Claude."""
     lines = [
-        f"Draft a formal contract addendum for the following situation:",
-        f"",
+        "Draft a formal contract addendum for the following situation:",
+        "",
         f"CONTRACT: {ctx.contract_name}",
         f"AREA: {ctx.contract_area or 'Not specified'}",
-        f"",
+        "",
         "REGULATORY TRIGGER(S):",
     ]
 
@@ -420,7 +415,7 @@ def _build_prompt(ctx: AddendumContext) -> str:
     lines.append("CLAUSE MODIFICATIONS REQUIRED:")
 
     for i, item in enumerate(ctx.items, 1):
-        lines.append(f"")
+        lines.append("")
         lines.append(f"  Modification {i}:")
         lines.append(f"  Clause: {item.affected_ref}")
         lines.append(f"  Regulatory change: {item.change_summary}")

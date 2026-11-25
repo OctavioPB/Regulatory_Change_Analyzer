@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 
 from src.mapping.rules_engine import RuleMatch, apply_rules, contracts_targeted_by_rules
 from src.models.document import RegulatoryChange, RegulatoryDocument
-from src.models.impact import ImpactItem, Severity
+from src.models.impact import Severity
 from src.recommendations.generator import generate_suggestion
 from src.repositories import audit_repo, contract_repo, impact_repo
 
@@ -29,8 +29,13 @@ logger = logging.getLogger(__name__)
 try:
     from src.mapping.semantic_mapper import ClauseMatch, find_similar_clauses
     _HAS_SEMANTIC = True
-except Exception:  # sentence-transformers not installed
+except Exception:  # [ml] extra not installed
     _HAS_SEMANTIC = False
+    ClauseMatch = object  # type: ignore[misc,assignment]
+
+    async def find_similar_clauses(*_args, **_kwargs) -> list:  # same name → patchable in tests
+        return []
+
     logger.warning("semantic_mapper unavailable — clause-level mapping disabled")
 
 
