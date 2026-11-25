@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - run: pip install "ruff>=0.4.0"
+      - run: pip install "ruff>=0.15,<0.16"  # same range as the [dev] extra
       - run: ruff check src tests scripts alembic evals
 
   backend-unit:

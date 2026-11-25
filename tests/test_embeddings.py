@@ -103,11 +103,16 @@ def test_rrf_uses_ranks_and_breaks_ties_by_id():
     assert rrf([[], []], key=lambda r: r.id) == []
 
 
-def test_vector_literal_writes_every_component_of_a_1024_dim_numpy_vector():
-    """str(numpy) elides arrays > 1000 items — the cross-mapper query broke with bge-m3."""
-    import numpy as np
-
-    vec = np.linspace(-1, 1, 1024, dtype=np.float32)
-    lit = embedder.vector_literal(vec)
+def test_vector_literal_writes_every_component():
+    lit = embedder.vector_literal([i / 1024 for i in range(1024)])
     assert "..." not in lit and lit.startswith("[") and lit.count(",") == 1023
     assert embedder.vector_literal([0.5, -1]) == "[0.5,-1.0]"
+
+
+def test_vector_literal_handles_numpy_vectors_over_1000_items():
+    """str(numpy) elides arrays > 1000 items — the cross-mapper query broke with bge-m3."""
+    np = pytest.importorskip("numpy")  # pgvector returns numpy arrays when numpy is installed
+    vec = np.linspace(-1, 1, 1024, dtype=np.float32)
+    assert "..." in str(vec)  # the bug this guards against
+    lit = embedder.vector_literal(vec)
+    assert "..." not in lit and lit.count(",") == 1023
