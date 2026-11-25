@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,9 +15,19 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://rca_user:rca_pass@localhost:5432/regulatory_db"
     database_url_sync: str = "postgresql://rca_user:rca_pass@localhost:5432/regulatory_db"
 
-    # LLM
+    # LLM — "anthropic" (Claude API) or "ollama" (local models such as Qwen / Gemma)
+    llm_provider: Literal["anthropic", "ollama"] = "anthropic"
     anthropic_api_key: str = ""
+    # Claude model id, or an Ollama tag (e.g. "qwen3:4b-instruct-2507-q4_K_M") when provider is ollama
     llm_model: str = "claude-opus-5-5"
+    ollama_url: str = "http://localhost:11434"
+    ollama_num_ctx: int = 32768       # Ollama defaults to 4096, too small for agent transcripts
+    ollama_timeout_s: float = 900.0   # large local models can be slow on partial GPU offload
+
+    @property
+    def llm_enabled(self) -> bool:
+        """Whether LLM features run for real (else they use their no-LLM fallbacks)."""
+        return self.llm_provider == "ollama" or bool(self.anthropic_api_key)
 
     # Storage
     data_dir: Path = Path("./data")
@@ -30,8 +41,13 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"
 
-    # Embeddings
-    embedding_model: str = "all-MiniLM-L6-v2"
+    # Embeddings (src/mapping/embedder.py). bge-m3 via Ollama: multilingual es/en, 1024 dims.
+    # EMBEDDING_DIM is the pgvector column size: changing model/dim needs `alembic upgrade head`
+    # and `python scripts/reembed.py`. For the [ml] extra: sentence-transformers +
+    # all-MiniLM-L6-v2 + 384 (English-only).
+    embedding_provider: Literal["ollama", "sentence-transformers", "none"] = "ollama"
+    embedding_model: str = "bge-m3"
+    embedding_dim: int = 1024
 
     # Scraping
     scrape_interval_hours: int = 24

@@ -12,16 +12,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# CPU-only torch first, so the [ml] extra below reuses it instead of pulling
-# the default CUDA wheel (~2 GB the app never uses)
-RUN pip install --index-url https://download.pytorch.org/whl/cpu torch
+# Embeddings come from Ollama (bge-m3) by default, so torch is not installed.
+# `--build-arg EXTRAS=ml` adds sentence-transformers (CPU-only torch, not the ~2 GB CUDA wheel).
+ARG EXTRAS=""
+RUN if [ "$EXTRAS" = "ml" ]; then pip install --index-url https://download.pytorch.org/whl/cpu torch; fi
 
 # Install dependencies in their own layer so code edits don't reinstall them.
 # (The previous `pip install -e .` ran before src/ existed, so the package
 # itself could not be built.)
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install ".[ml]"
+RUN if [ -n "$EXTRAS" ]; then pip install ".[$EXTRAS]"; else pip install .; fi
 
 COPY alembic.ini ./
 COPY alembic ./alembic

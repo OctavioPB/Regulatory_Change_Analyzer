@@ -1,10 +1,8 @@
 """Regulatory RAG service — retrieval-augmented generation over regulatory documents."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-import re
 from dataclasses import dataclass
 from html import escape as _esc
 from typing import AsyncIterator
@@ -13,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
+from src.services import grounding, retrieval
 from src.services.llm import get_client, response_text
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 _TOP_K_CHANGES  = 5   # regulatory change chunks to retrieve
 _TOP_K_CLAUSES  = 3   # contract clause chunks to retrieve
-_MIN_SIM        = 0.35 # minimum cosine similarity to include a chunk
 
 # Grounded Q&A over a small retrieved context — medium (the Opus 5.5 default)
 # is the right depth; set explicitly so a model change doesn't shift it silently.
@@ -79,7 +77,10 @@ class ContextChunk:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 async def query(user_question: str, db: AsyncSession) -> ChatResponse:
-    """Retrieve relevant context and ask Claude for a cited answer.
+    """Retrieve relevant context and ask Claude for a cited, validated answer.
+
+    Nothing retrieved → the system refusal, without calling the model. An answer whose
+    citations fail validation is regenerated once, then refused (see ``grounding``).
 
     Args:
         user_question: The compliance officer's natural-language question.
@@ -91,39 +92,53 @@ async def query(user_question: str, db: AsyncSession) -> ChatResponse:
     chunks = await _retrieve(user_question, db)
     context_xml, citations = _build_context(chunks)
 
-    if not settings.anthropic_api_key:
+    if not settings.llm_enabled:
         return ChatResponse(
             answer="[LLM not configured] No ANTHROPIC_API_KEY set. Retrieved context:\n\n" + context_xml,
             citations=citations,
         )
+    if not chunks:
+        return ChatResponse(answer=grounding.refusal_text(user_question), citations=[])
 
-    message = await get_client().messages.create(
-        model=settings.llm_model,
-        max_tokens=16000,  # thinking tokens count against this; 1024 truncated answers
-        output_config={"effort": _EFFORT},
-        system=_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": f"<context>\n{context_xml}\n</context>\n\n{user_question}"},
-        ],
-    )
-    answer = _REFUSAL_ANSWER if message.stop_reason == "refusal" else response_text(message)
-    tokens = message.usage.input_tokens + message.usage.output_tokens
-
-    return ChatResponse(answer=answer, citations=citations, tokens_used=tokens)
+    tags = _tags(chunks)
+    messages = _messages(context_xml, user_question)
+    tokens = 0
+    for attempt in range(grounding.MAX_REGENERATIONS + 1):
+        message = await get_client().messages.create(
+            model=settings.llm_model,
+            max_tokens=16000,  # thinking tokens count against this; 1024 truncated answers
+            output_config={"effort": _EFFORT},
+            system=_SYSTEM_PROMPT,
+            messages=messages,
+        )
+        tokens += message.usage.input_tokens + message.usage.output_tokens
+        if message.stop_reason == "refusal":
+            return ChatResponse(answer=_REFUSAL_ANSWER, citations=[], tokens_used=tokens)
+        answer = response_text(message)
+        verdict = grounding.validate(answer, tags)
+        if verdict.grounded:
+            return ChatResponse(answer=answer, citations=citations, tokens_used=tokens)
+        if not grounding.needs_regeneration(verdict) or attempt == grounding.MAX_REGENERATIONS:
+            break
+        messages = _retry(messages, answer, verdict, tags)
+    return ChatResponse(answer=grounding.refusal_text(user_question), citations=[], tokens_used=tokens)
 
 
 async def stream_query(
     user_question: str,
     db: AsyncSession,
 ) -> AsyncIterator[str]:
-    """Stream the Claude response as Server-Sent Events.
+    """Stream the answer as Server-Sent Events.
 
     Yields SSE lines. Each event is a JSON string on a `data:` line.
     Event types:
-      {"type": "token",     "text": "..."}   — partial answer token
-      {"type": "citations", "citations": [...]} — final citations payload
-      {"type": "done"}                          — stream finished
-      {"type": "error",     "message": "..."}  — error
+      {"type": "citations", "citations": [...]} — retrieved sources (sent first, and again
+                                                   as [] when the answer is replaced by a refusal)
+      {"type": "token",     "text": "..."}      — partial answer token
+      {"type": "reset"}                         — discard the text streamed so far: a corrected
+                                                   answer or the system refusal follows
+      {"type": "done", "grounded", "refused", "regenerations"} — stream finished
+      {"type": "error",     "message": "..."}   — error (instead of done)
 
     Args:
         user_question: Compliance question.
@@ -133,7 +148,7 @@ async def stream_query(
         SSE-formatted strings.
     """
     chunks = await _retrieve(user_question, db)
-    context_xml, citations = _build_context(chunks)
+    context_xml, _ = _build_context(chunks)
 
     # Send citations immediately so the UI can render them while text streams
     cit_payload = [
@@ -150,7 +165,7 @@ async def stream_query(
     ]
     yield _sse("citations", citations=cit_payload)
 
-    if not settings.anthropic_api_key:
+    if not settings.llm_enabled:
         fallback = (
             "[LLM not configured — set ANTHROPIC_API_KEY]\n\n"
             "Retrieved context snippet:\n\n"
@@ -160,59 +175,83 @@ async def stream_query(
         yield _sse("done")
         return
 
+    if not chunks:  # nothing to ground an answer on: the system refuses, no model call
+        yield _sse("token", text=grounding.refusal_text(user_question))
+        yield _sse("done", grounded=False, refused=True, regenerations=0)
+        return
+
+    tags = _tags(chunks)
+    messages = _messages(context_xml, user_question)
     try:
-        async with get_client().messages.stream(
-            model=settings.llm_model,
-            max_tokens=16000,
-            output_config={"effort": _EFFORT},
-            system=_SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"<context>\n{context_xml}\n</context>\n\n{user_question}",
-                }
-            ],
-        ) as stream:
-            async for text_chunk in stream.text_stream:
-                yield _sse("token", text=text_chunk)
-            final = await stream.get_final_message()
-        if final.stop_reason == "refusal":
-            yield _sse("error", message=_REFUSAL_ANSWER)
-            return
+        for attempt in range(grounding.MAX_REGENERATIONS + 1):
+            if attempt:
+                yield _sse("reset")
+            parts: list[str] = []
+            async with get_client().messages.stream(
+                model=settings.llm_model,
+                max_tokens=16000,
+                output_config={"effort": _EFFORT},
+                system=_SYSTEM_PROMPT,
+                messages=messages,
+            ) as stream:
+                async for text_chunk in stream.text_stream:
+                    parts.append(text_chunk)
+                    yield _sse("token", text=text_chunk)
+                final = await stream.get_final_message()
+            if final.stop_reason == "refusal":
+                yield _sse("error", message=_REFUSAL_ANSWER)
+                return
+            answer = "".join(parts)
+            verdict = grounding.validate(answer, tags)
+            if verdict.grounded:
+                yield _sse("done", grounded=True, refused=False, regenerations=attempt)
+                return
+            logger.info("RAG answer not grounded (attempt %d): %s", attempt + 1, verdict)
+            if not grounding.needs_regeneration(verdict) or attempt == grounding.MAX_REGENERATIONS:
+                break
+            messages = _retry(messages, answer, verdict, tags)
     except Exception as exc:
         logger.exception("Claude streaming error")
         yield _sse("error", message=f"LLM request failed: {type(exc).__name__}")
         return
 
-    yield _sse("done")
+    yield _sse("reset")
+    yield _sse("citations", citations=[])
+    yield _sse("token", text=grounding.refusal_text(user_question))
+    yield _sse("done", grounded=False, refused=True, regenerations=attempt)
+
+
+def _tags(chunks: list[ContextChunk]) -> list[str]:
+    return [f"{'REG' if c.chunk_type == 'regulation' else 'CON'}-{c.ref_id}" for c in chunks]
+
+
+def _messages(context_xml: str, question: str) -> list[dict]:
+    return [{"role": "user", "content": f"<context>\n{context_xml}\n</context>\n\n{question}"}]
+
+
+def _retry(messages: list[dict], answer: str, verdict: grounding.Verdict, tags: list[str]) -> list[dict]:
+    return messages + [
+        {"role": "assistant", "content": answer or "(no answer)"},
+        {"role": "user", "content": grounding.feedback(verdict, tags)},
+    ]
 
 
 # ── Retrieval ─────────────────────────────────────────────────────────────────
 
 async def _retrieve(query_text: str, db: AsyncSession) -> list[ContextChunk]:
-    """Embed query, vector-search regulatory changes and contract clauses.
+    """Hybrid search (semantic + keyword, rank-fused) over regulatory changes and contract clauses."""
 
-    Falls back to ILIKE full-text search when no embeddings are available.
-    """
-    changes: list = []
-    clauses: list = []
+    async def fetch(sql: str, params: dict):
+        return (await db.execute(text(sql), params)).fetchall()
 
-    try:
-        from src.mapping.embedder import embed_text as _embed
-        query_vec = await asyncio.to_thread(_embed, query_text)
-        changes = await _search_changes(db, query_vec)
-        clauses = await _search_clauses(db, query_vec)
-    except Exception as exc:
-        logger.warning("Vector search failed (%s) — falling back to text search", exc)
-
-    # Text fallback when vector search returns nothing
-    if not changes and not clauses:
-        changes = await _text_search_changes(db, query_text)
+    vec = await retrieval.query_vector(query_text)
+    changes = await retrieval.search_changes(fetch, query_text, limit=_TOP_K_CHANGES, vec=vec)
+    clauses = await retrieval.search_clauses(fetch, query_text, limit=_TOP_K_CLAUSES, vec=vec)
 
     chunks: list[ContextChunk] = []
     ref_id = 1
 
-    for row in changes[:_TOP_K_CHANGES]:
+    for row in changes:
         pub_date = row.publication_date.strftime("%Y-%m-%d") if row.publication_date else None
         chunks.append(ContextChunk(
             ref_id=ref_id,
@@ -225,122 +264,26 @@ async def _retrieve(query_text: str, db: AsyncSession) -> list[ContextChunk]:
         ))
         ref_id += 1
 
-    for row in clauses[:_TOP_K_CLAUSES]:
+    for row in clauses:
         chunks.append(ContextChunk(
             ref_id=ref_id,
             chunk_type="contract",
-            title=row.contract_name,
-            source=row.contract_area or "Internal",
+            title=row.name,
+            source=row.area or "Internal",
             article_ref=row.clause_ref or "—",
-            excerpt=row.clause_text[:500],
+            excerpt=row.text[:500],
             publication_date=None,
         ))
         ref_id += 1
 
     logger.info(
-        "RAG retrieved %d change chunks + %d clause chunks for query (%d chars)",
-        len(changes), len(clauses), len(query_text),
+        "RAG retrieved %d change chunks + %d clause chunks (%s) for query (%d chars)",
+        len(changes), len(clauses), "hybrid" if vec is not None else "keyword", len(query_text),
     )
     return chunks
 
 
-async def _search_changes(db: AsyncSession, query_vec: list[float]):
-    """Vector search over regulatory_changes that have embeddings."""
-    stmt = text(
-        """
-        SELECT
-            rc.article_ref,
-            rc.summary,
-            rc.new_text,
-            rd.title  AS doc_title,
-            rd.source,
-            rd.publication_date,
-            1 - (rc.embedding <=> CAST(:vec AS vector)) AS sim
-        FROM regulatory_changes rc
-        JOIN regulatory_documents rd ON rd.id = rc.document_id
-        WHERE rc.embedding IS NOT NULL
-          AND 1 - (rc.embedding <=> CAST(:vec AS vector)) >= :min_sim
-        ORDER BY rc.embedding <=> CAST(:vec AS vector)
-        LIMIT :top_k
-        """
-    )
-    result = await db.execute(stmt, {"vec": str(query_vec), "min_sim": _MIN_SIM, "top_k": _TOP_K_CHANGES})
-    return result.fetchall()
-
-
-async def _search_clauses(db: AsyncSession, query_vec: list[float]):
-    """Vector search over contract_clauses that have embeddings."""
-    stmt = text(
-        """
-        SELECT
-            cc.clause_ref,
-            cc.text  AS clause_text,
-            c.name   AS contract_name,
-            c.area   AS contract_area,
-            1 - (cc.embedding <=> CAST(:vec AS vector)) AS sim
-        FROM contract_clauses cc
-        JOIN contracts c ON c.id = cc.contract_id
-        WHERE cc.embedding IS NOT NULL
-          AND 1 - (cc.embedding <=> CAST(:vec AS vector)) >= :min_sim
-        ORDER BY cc.embedding <=> CAST(:vec AS vector)
-        LIMIT :top_k
-        """
-    )
-    result = await db.execute(stmt, {"vec": str(query_vec), "min_sim": _MIN_SIM, "top_k": _TOP_K_CLAUSES})
-    return result.fetchall()
-
-
-_STOPWORDS = {
-    "what", "which", "when", "where", "does", "have", "with", "about", "that", "this",
-    "there", "their", "from", "into", "should", "would", "could", "need", "changed",
-    "cuál", "cuáles", "qué", "como", "cómo", "para", "sobre", "esta", "este", "tiene",
-}
-
-
-def _keywords(query_text: str, limit: int = 6) -> list[str]:
-    """Meaningful words of a question: punctuation stripped, stopwords dropped."""
-    seen: list[str] = []
-    for w in re.findall(r"\w+", query_text.lower()):
-        if len(w) > 3 and w not in _STOPWORDS and w not in seen:
-            seen.append(w)
-    return seen[:limit]
-
-
-async def _text_search_changes(db: AsyncSession, query_text: str):
-    """ILIKE fallback when no embeddings exist, ranked by how many keywords match.
-
-    Searches the regulation text itself, not only the auto-generated summary
-    (which is just "Artículo N: new section added" and rarely matches).
-    """
-    words = _keywords(query_text)
-    if not words:
-        return []
-
-    stmt = text(
-        """
-        SELECT * FROM (
-            SELECT
-                rc.article_ref,
-                rc.summary,
-                rc.new_text,
-                rd.title  AS doc_title,
-                rd.source,
-                rd.publication_date,
-                0.5       AS sim,
-                (SELECT count(*) FROM unnest(CAST(:patterns AS text[])) AS p
-                  WHERE rc.new_text ILIKE p OR rc.summary ILIKE p OR rd.title ILIKE p) AS hits
-            FROM regulatory_changes rc
-            JOIN regulatory_documents rd ON rd.id = rc.document_id
-        ) ranked
-        WHERE hits > 0
-        ORDER BY hits DESC, publication_date DESC
-        LIMIT :top_k
-        """
-    )
-    # \w includes "_", an ILIKE single-char wildcard — escape it (backslash is the default escape)
-    patterns = [f"%{w.replace('_', chr(92) + '_')}%" for w in words]
-    result = await db.execute(stmt, {"patterns": patterns, "top_k": _TOP_K_CHANGES})
-    return result.fetchall()
+_keywords = retrieval.keywords  # kept for callers of the old name
 
 
 # ── Context assembly ──────────────────────────────────────────────────────────

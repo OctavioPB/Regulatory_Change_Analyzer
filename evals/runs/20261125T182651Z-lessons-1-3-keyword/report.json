@@ -1,0 +1,764 @@
+{
+  "meta": {
+    "run_id": "20261125T182651Z-lessons-1-3-keyword",
+    "started": "2026-11-25T18:26:51+00:00",
+    "suites": [
+      "rag",
+      "agent",
+      "addendum",
+      "team"
+    ],
+    "models": [
+      "ollama:qwen3:4b-instruct-2507-q4_K_M",
+      "ollama:gemma4:26b-a4b-it-qat"
+    ],
+    "commit": "2ca1b66",
+    "dirty": true,
+    "retrieval": "keyword (embeddings off)"
+  },
+  "summary": {
+    "ollama:qwen3:4b-instruct-2507-q4_K_M": {
+      "rag": {
+        "pass": "5/7",
+        "answerable_pass": "3/5",
+        "refusal_accuracy": "2/2",
+        "false_refusals": 2,
+        "invalid_citations": 0,
+        "errors": 0,
+        "answerable_without_context": 0,
+        "p50_seconds": 0.4
+      },
+      "agent": {
+        "pass": "5/9",
+        "answerable_pass": "4/7",
+        "refusal_accuracy": "1/2",
+        "false_refusals": 2,
+        "invalid_citations": 0,
+        "errors": 0,
+        "answerable_without_context": null,
+        "p50_seconds": 3.6,
+        "avg_steps": 2.0,
+        "tool_errors": 0
+      },
+      "addendum": {
+        "pass": "9/9",
+        "avg_structure": 1.0,
+        "avg_clause_coverage": 1.0,
+        "cites_circular": "9/9",
+        "drafts_with_unsupported_pct": 0,
+        "references_real_clause": "9/9",
+        "seconds": 84.0
+      },
+      "team": {
+        "pass": "2/2",
+        "avg_structure": 1.0,
+        "avg_clause_coverage": 1.0,
+        "cites_circular": "2/2",
+        "drafts_with_unsupported_pct": 0,
+        "references_real_clause": "2/2",
+        "seconds": 56.8,
+        "review_approved": "2/2",
+        "avg_rounds": 1.5,
+        "agent_failures": 0
+      }
+    }
+  },
+  "results": {
+    "ollama:qwen3:4b-instruct-2507-q4_K_M": {
+      "rag": [
+        {
+          "case": "sofom-limit-es",
+          "answerable": true,
+          "seconds": 1.1,
+          "retrieved_sources": 8,
+          "answer": "Según la Circular 12/2025 — Modificación límites de apalancamiento SOFOM (REG-1), el límite de contraparte para operaciones de Sociedades Financieras de Objeto Múltiple (SOFOM) se reduce del veinte por ciento (20%) al **quince por ciento (15%)** del capital neto de la institución.\n\n[REG-1]",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null
+        },
+        {
+          "case": "sofom-deadline-en",
+          "answerable": true,
+          "seconds": 0.3,
+          "retrieved_sources": 3,
+          "answer": "The documents in the system don't contain sufficient information about this topic. I recommend consulting the original source directly.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": false,
+          "facts_ok": false,
+          "facts_missing": [
+            "90"
+          ],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": true,
+          "error": null
+        },
+        {
+          "case": "aml-threshold-en",
+          "answerable": true,
+          "seconds": 0.3,
+          "retrieved_sources": 3,
+          "answer": "The documents in the system don't contain sufficient information about this topic. I recommend consulting the original source directly.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": false,
+          "facts_ok": false,
+          "facts_missing": [
+            "100000"
+          ],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": true,
+          "error": null
+        },
+        {
+          "case": "aml-officer-es",
+          "answerable": true,
+          "seconds": 0.6,
+          "retrieved_sources": 3,
+          "answer": "Las ITF deben designar un oficial de cumplimiento certificado en materia de PLD dentro de los ciento ochenta días naturales siguientes a la entrada en vigor de la Circular 15/2025. [REG-1]",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null
+        },
+        {
+          "case": "basel-ccn-es",
+          "answerable": true,
+          "seconds": 1.4,
+          "retrieved_sources": 8,
+          "answer": "El nuevo coeficiente de capital neto (CCN) mínimo para la banca múltiple es del **doce por ciento (12%)** del total de activos ponderados por riesgo, según [REG-1].  \n\nEl coeficiente de capital neto mínimo anterior era del **diez punto cinco por ciento (10.5%)** del total de activos ponderados por riesgo.  \n\nEste cambio se establece en el artículo 1 de la Circular 18/2025 del CNBV, publicada el 15 de abril de 2025 [REG-1].",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null
+        },
+        {
+          "case": "unanswerable-crypto-es",
+          "answerable": false,
+          "seconds": 0.4,
+          "retrieved_sources": 7,
+          "answer": "Los documentos del sistema no contienen información suficiente sobre este tema. Recomiendo consultar directamente la fuente original.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": true,
+          "facts_ok": null,
+          "facts_missing": [],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": false,
+          "error": null
+        },
+        {
+          "case": "unanswerable-sec-en",
+          "answerable": false,
+          "seconds": 0.4,
+          "retrieved_sources": 8,
+          "answer": "The documents in the system don't contain sufficient information about this topic. I recommend consulting the original source directly.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": true,
+          "facts_ok": null,
+          "facts_missing": [],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": false,
+          "error": null
+        }
+      ],
+      "agent": [
+        {
+          "case": "sofom-limit-es",
+          "answerable": true,
+          "seconds": 1.3,
+          "retrieved_sources": 1,
+          "answer": "El límite de contraparte para las SOFOM se reduce del 20% al 15% del capital neto según el artículo 5 de la Circular 12/2025 [REG-1].",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null,
+          "steps": 1,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations"
+          ],
+          "usage": {
+            "input_tokens": 2491,
+            "output_tokens": 103
+          }
+        },
+        {
+          "case": "sofom-deadline-en",
+          "answerable": true,
+          "seconds": 3.6,
+          "retrieved_sources": 1,
+          "answer": "The database does not contain information about the number of days credit institutions have to adjust their risk management systems to the new SOFOM counterparty limit. While it confirms the reduction of the SOFOM counterparty limit from 20% to 15% of net capital (cite_as: REG-1), no regulatory text specifies a deadline for implementation.\n\nTherefore, the required adjustment period is not available in the database.  \n**Recommendation**: Consult the full text of Circular 12/2025 — Modificación límites de apalancamiento SOFOM (cite_as: REG-1) or the CNBV official portal for the specific timeline.",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": false,
+          "facts_ok": false,
+          "facts_missing": [
+            "90"
+          ],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": true,
+          "error": null,
+          "steps": 4,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations",
+            "get_regulatory_change",
+            "list_impact_alerts",
+            "get_impact_alert"
+          ],
+          "usage": {
+            "input_tokens": 9738,
+            "output_tokens": 313
+          }
+        },
+        {
+          "case": "aml-threshold-en",
+          "answerable": true,
+          "seconds": 3.9,
+          "retrieved_sources": 0,
+          "answer": "The documents in the system don't contain sufficient information about this topic. I recommend consulting the original source directly.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": false,
+          "facts_ok": false,
+          "facts_missing": [
+            "100000"
+          ],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": true,
+          "error": null,
+          "steps": 3,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations",
+            "search_regulations",
+            "search_regulations"
+          ],
+          "usage": {
+            "input_tokens": 5030,
+            "output_tokens": 392
+          }
+        },
+        {
+          "case": "aml-officer-es",
+          "answerable": true,
+          "seconds": 3.8,
+          "retrieved_sources": 1,
+          "answer": "The relevant regulation is:\n\n- **Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech**, Article 3:  \n  \"Las ITF deberán designar un oficial de cumplimiento certificado en materia de PLD dentro de los ciento ochenta días naturales siguientes a la entrada en vigor de esta Circular.\"  \n  [REG-1]\n\nThis means that ITFs must designate a certified compliance officer for PLD within **180 natural days** after the circular enters into force.\n\nThe circular entered into force on April 6, 2025 (the day after its publication on April 5, 2025).\n\nTherefore, the deadline for designating the officer is **July 4, 2025** (180 days after April 6, 2025).\n\nNo cross-jurisdictional equivalent is required here, as the question is specific to CNBV (Mexico) and PLD.\n\n**Final Answer:**  \nITFs must designate a certified compliance officer in PLD within **180 natural days** of the circular's entry into force, which is **July 4, 2025**.  \n[cite_as: REG-1]",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null,
+          "steps": 1,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations"
+          ],
+          "usage": {
+            "input_tokens": 2917,
+            "output_tokens": 385
+          }
+        },
+        {
+          "case": "basel-ccn-es",
+          "answerable": true,
+          "seconds": 3.2,
+          "retrieved_sources": 1,
+          "answer": "El nuevo coeficiente de capital neto mínimo para la banca múltiple es del **12%** del total de activos ponderados por riesgo, incrementado desde el **10.5%** anterior.\n\nEste cambio se establece en la Circular 18/2025 del CNBV, publicada el 15 de abril de 2025 [REG-1]. No se encontró información sobre un equivalente previo en el SEC, por lo que no se puede confirmar si existe una correspondencia directa en Estados Unidos.  \n\n**Acción recomendada:** Verificar si el contrato de banca múltiple incluye cláusulas que reflejen este cambio, especialmente en el cálculo de capital y riesgo. Se sugiere revisar el impacto en procesos de riesgo y capital.  \n\n*Nota: El cambio es de alta relevancia para la estabilidad de capital y debe ser implementado en los sistemas de gestión de riesgos.*",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": false,
+          "error": null,
+          "steps": 2,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations",
+            "get_regulatory_change"
+          ],
+          "usage": {
+            "input_tokens": 4157,
+            "output_tokens": 316
+          }
+        },
+        {
+          "case": "unanswerable-crypto-es",
+          "answerable": false,
+          "seconds": 2.4,
+          "retrieved_sources": 1,
+          "answer": "No se establecieron límites específicos para invertir en criptoactivos dentro de las AFORES en la información disponible.\n\nLa búsqueda por \"límites para invertir en criptoactivos en AFORES\" en la CNBV no devolvió resultados relevantes. La única coincidencia encontrada es una modificación sobre el límite de contraparte para SOFOM (no relacionada con criptoactivos o AFORES), citada como [REG-1].\n\nSe recomienda consultar la regulación oficial de la CNBV sobre inversiones en criptoactivos en AFORES o verificar si existe una circular específica sobre este tema, ya que actualmente no hay evidencia en el sistema de registros de dicha regulación.\n\nSi se requiere, puedo ayudar a buscar si existe una equivalencia en la SEC (EE.UU.) o si hay alertas de impacto relacionadas.",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": false,
+          "facts_ok": null,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null,
+          "steps": 1,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations"
+          ],
+          "usage": {
+            "input_tokens": 2463,
+            "output_tokens": 241
+          }
+        },
+        {
+          "case": "unanswerable-sec-en",
+          "answerable": false,
+          "seconds": 1.4,
+          "retrieved_sources": 0,
+          "answer": "The documents in the system don't contain sufficient information about this topic. I recommend consulting the original source directly.",
+          "regenerations": 0,
+          "system_refusal": true,
+          "passed": true,
+          "facts_ok": null,
+          "facts_missing": [],
+          "cited": false,
+          "invalid_citations": [],
+          "refused": true,
+          "false_refusal": false,
+          "error": null,
+          "steps": 0,
+          "tool_errors": 0,
+          "tools": [],
+          "usage": {
+            "input_tokens": 1101,
+            "output_tokens": 152
+          }
+        },
+        {
+          "case": "multihop-aml-contracts-es",
+          "answerable": true,
+          "seconds": 7.5,
+          "retrieved_sources": 1,
+          "answer": "Los siguientes contratos internos se ven afectados por la Circular 15/2025 de PLD para fintech, y las cláusulas que deberían revisarse:\n\n1. **Client Onboarding and AML Policy**  \n   - Cláusula a revisar: Artículo 3 (nueva obligación)  \n   - Acción: Agregar una nueva cláusula que refleje los requisitos de debida diligencia reforzada (DDR) para clientes con alto riesgo, conforme a la Circular 15/2025.  \n   - Severidad: Alta  \n   - Estado: Pendiente revisión  \n   - Cite: [REG-1], [IMP-507adf67]\n\n2. **Fintech Electronic Payment Service Agreement**  \n   - Cláusula a revisar: Artículo 3 (nueva obligación)  \n   - Acción: Agregar una nueva cláusula que incluya los requisitos de reporte PLD/AML y DDR para clientes con alto riesgo.  \n   - Severidad: Alta  \n   - Estado: Pendiente revisión  \n   - Cite: [REG-1], [IMP-507adf67]\n\n3. **Master Investment Agreement — Fintech ABC**  \n   - Cláusula a revisar: Artículo 3 (nueva obligación)  \n   - Acción: Agregar una cláusula que cumpla con los nuevos requisitos de reporte PLD/AML y DDR.  \n   - Severidad: Alta  \n   - Estado: Pendiente revisión  \n   - Cite: [REG-1], [IMP-507adf67]\n\n4. **SOFOM XYZ Loan Portfolio Agreement**  \n   - Cláusula a revisar: Artículo 3 (nueva obligación)  \n   - Acción: Incorporar una cláusula que refleje los nuevos requisitos de reporte PLD/AML y DDR para clientes de alto riesgo.  \n   - Severidad: Alta  \n   - Estado: Pendiente revisión  \n   - Cite: [REG-1], [IMP-507adf67]\n\n> **Nota**: Todos los impactos tienen severidad alta y están pendientes de revisión. Se recomienda consultar a asesor legal para la redacción de las nuevas cláusulas.  \n> La Circular 15/2025 introduce una nueva obligación en el artículo 3 sobre DDR para clientes con alto riesgo, que debe ser incorporada en todos los contratos mencionados.",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": true,
+          "facts_ok": true,
+          "facts_missing": [],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null,
+          "steps": 3,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations",
+            "list_impact_alerts",
+            "get_impact_alert"
+          ],
+          "usage": {
+            "input_tokens": 7921,
+            "output_tokens": 680
+          }
+        },
+        {
+          "case": "multihop-sofom-derivatives-en",
+          "answerable": true,
+          "seconds": 3.6,
+          "retrieved_sources": 2,
+          "answer": "The contract relevant to derivatives master agreements with SOFOMs is the **SOFOM XYZ Loan Portfolio Agreement** (Clause 3.1, Risk area).\n\nCurrently, the clause states:  \n*\"Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.\"*\n\n**Context**:  \nCircular 12/2025 (CNBV) introduces a new requirement for derivatives master agreements with SOFOMs to include an automatic adjustment clause when exposure exceeds the threshold set in Article 5. However, the current contract clause does not explicitly reference leverage limits or automatic adjustment mechanisms.  \n\n**Action needed**:  \nThe contract clause does not currently align with the new CNBV requirement. A review and update of Clause 3.1 to incorporate an automatic exposure adjustment mechanism is required.  \n\n*Note: No equivalent SEC regulation has been identified for this CNBV change (cross-jurisdiction mapping not available).*  \n\n[REG-1], [CON-2]",
+          "regenerations": 0,
+          "system_refusal": false,
+          "passed": false,
+          "facts_ok": false,
+          "facts_missing": [
+            "isda",
+            "8.2"
+          ],
+          "cited": true,
+          "invalid_citations": [],
+          "refused": false,
+          "false_refusal": false,
+          "error": null,
+          "steps": 3,
+          "tool_errors": 0,
+          "tools": [
+            "search_regulations",
+            "find_cross_jurisdiction",
+            "search_contract_clauses"
+          ],
+          "usage": {
+            "input_tokens": 5604,
+            "output_tokens": 356
+          }
+        }
+      ],
+      "addendum": [
+        {
+          "contract": "ISDA Derivative Trading Master Agreement",
+          "references_real_clause": true,
+          "chars": 4108,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 12/2025 — Modificación límites de apalancamiento SOFOM",
+          "error": null,
+          "draft": "**ADDENDUM TO ISDA DERIVATIVE TRADING MASTER AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the International Swaps and Derivatives Association, Inc. (“ISDA”) has established the Derivative Trading Master Agreement (“Master Agreement”) as a standard contract for derivative transactions;  \n\nWHEREAS, the Comisión Nacional de Valores y Bolsas (CNBV) issued **Circular 12/2025 — Modificación límites de apalancamiento SOFOM**, dated March 20, 2025, which contains Article 5, specifying a new limit on counterparty exposure for Societies of Financial Object Multiple (SOFOM);  \n\nWHEREAS, Article -5 of said Circular establishes that: *“El límite de contraparte para operaciones de Sociedades Financieras de Objeto Múltiple (SOFOM) se reduce del veinte por ciento (20%) al quince por ciento (15%) del capital neto de la institución.”*;  \n\nWHEREAS, the Master Agreement, as currently executed, does not contain a specific reference to the SOFOM counterparty exposure limit, nor does it incorporate the regulatory requirement set forth in CNBV Circular 12/2025, Article 5;  \n\nNOW THEREFORE, in order to ensure compliance with the regulatory requirements imposed by CNBV Circular 12/2025, and to reflect the updated counterparty exposure limit for SOFOM entities, the parties agree as follows:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 6.1**  \nClause 6.1 of the ISDA Derivative Trading Master Agreement is hereby amended as follows:  \n\nThe current text of Clause 6.1:  \n*“Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions follow Basel III standards.”*  \n\nis amended to read:  \n*“Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions shall follow Basel III standards, and for transactions involving a counterparty that is a Society of Financial Object Multiple (SOFOM), the maximum exposure limit shall not exceed fifteen percent (15%) of the net capital of such SOFOM entity.”*  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 8.2**  \nClause 8.2 of the ISDA Derivative Trading Master Agreement is hereby amended as follows:  \n\nThe current text of Clause 8.2:  \n*“Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates.”*  \n\nis amended to read:  \n*“Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates, and specifically, upon any modification to the counterparty exposure limit for a SOFOM entity as set forth in CNBV Circular 12/2025, Article 5.”*  \n\n---\n\n**ARTICLE 3 — GENERAL PROVISIONS**  \n\nAll other provisions of the ISDA Derivative Trading Master Agreement remain in full force and effect, unless otherwise modified by this Addendum.  \n\nThis Addendum shall be governed by the laws of the jurisdiction in which the Master Agreement was originally executed, or if such jurisdiction is not specified, by the laws of [JURISDICTION].  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have caused this Addendum to be executed by their duly authorized representatives as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is effective upon execution by both parties and shall take effect immediately upon the date of execution, unless otherwise agreed in writing.*"
+        },
+        {
+          "contract": "Master Investment Agreement — Fintech ABC",
+          "references_real_clause": true,
+          "chars": 3745,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 12/2025 — Modificación límites de apalancamiento SOFOM",
+          "error": null,
+          "draft": "**ADDENDUM TO MASTER INVESTMENT AGREEMENT — FINTECH ABC**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, [PARTY A] and [PARTY B] entered into the Master Investment Agreement — Fintech ABC (the “Agreement”) on [ORIGINAL SIGNING DATE], as amended from time to time;  \n\nWHEREAS, the National Banking and Financial Commission of Mexico (CNBV) issued Circular 12/2025 — *Modificación límites de apalancamiento SOFOM* on March 20, 2025, which modifies the leverage limits applicable to Societies of Financial Object Multiple (SOFOM);  \n\nWHEREAS, Article 5 of said Circular 12/2025 establishes a new regulatory requirement that the counterparty exposure limit for SOFOMs shall be reduced from twenty percent (20%) to fifteen percent (15%) of the institution’s net capital;  \n\nWHEREAS, the current counterparty exposure limit in Clause 4.2 of the Agreement exceeds the regulatory threshold set forth in Article 5 of the Circular 12/2025;  \n\nNOW THEREFORE, in order to ensure compliance with applicable regulatory requirements and to maintain the integrity of the investment framework under Mexican financial law, the parties hereby amend the Agreement as follows:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 4.2**  \n\nClause 4.2 of the Master Investment Agreement — Fintech ABC is hereby amended as follows:  \n\nThe counterparty exposure limit shall not exceed **fifteen percent (15%)** of the total portfolio value. Any modification to applicable leverage limits imposed by regulatory authorities shall trigger an automatic review of this clause.  \n\nThis amendment is effective immediately upon execution of this Addendum and shall apply to all future investments, portfolio allocations, and risk assessments under the Agreement.  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 7.1**  \n\nClause 7.1 of the Master Investment Agreement — Fintech ABC is hereby amended as follows:  \n\nInvestment fund allocations must comply with the limits established by the applicable regulatory authority for mutual funds and investment vehicles, including any fintech-specific restrictions. In particular, such allocations shall not exceed **fifteen percent (15%)** of the net capital of the SOFOM entity involved, as defined in Article 5 of Circular 12/2025 — *Modificación límites de apalancamiento SOFOM*.  \n\nThis amendment shall be applied to all fund structures, sub-funds, and investment vehicles managed under the Agreement, and shall be incorporated into all internal risk governance and compliance protocols.  \n\n---\n\n**GENERAL PROVISIONS**  \n\nAll other provisions of the Master Investment Agreement — Fintech ABC remain in full force and effect, except as modified herein.  \n\nThis Addendum shall be governed by and interpreted in accordance with the laws of the Federal District of Mexico, Republic of Mexico.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties hereto have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is triggered by the regulatory change in Article 5 of CNBV Circular 12/2025 — Modificación límites de apalancamiento SOFOM, dated March 20, 2025. All downstream calculations, risk modeling, and system thresholds must be updated to reflect the 15% counterparty exposure limit. Compliance verification shall be conducted within ten (10) business days of this Addendum’s effective date.*"
+        },
+        {
+          "contract": "SOFOM XYZ Loan Portfolio Agreement",
+          "references_real_clause": true,
+          "chars": 5458,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 12/2025 — Modificación límites de apalancamiento SOFOM",
+          "error": null,
+          "draft": "**ADDENDUM TO SOFOM XYZ LOAN PORTFOLIO AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the National Banking Commission of Venezuela (CNBV) issued Circular 12/2025 — *Modificación límites de apalancamiento SOFOM* on March 20, 2025, which modifies the maximum allowed counterparty exposure for Societies of Financial Object Multiple (SOFOM);  \n\nWHEREAS, Article 5 of said Circular establishes a new limit for counterparty exposure, specifying that the maximum counterparty exposure for SOFOM institutions shall be reduced from twenty percent (20%) to fifteen percent (15%) of the institution’s net capital;  \n\nWHEREAS, the SOFOM XYZ Loan Portfolio Agreement (the “Agreement”) contains provisions relating to credit exposure and leverage ratios that must be updated to reflect the regulatory change set forth in Article 5 of Circular 12/2025;  \n\nNOW THEREFORE, in order to ensure compliance with the latest regulatory requirements, the parties hereby agree to the following amendments to the Agreement, specifically in the area of risk management and capital exposure limits.\n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 3.1**  \nClause 3.1 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 3.1 is:  \n*“Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.”*  \n\nThis clause is amended to read:  \n*“Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum counterparty exposure for any single borrower or group of borrowers shall not exceed fifteen percent (15%) of the net capital of the institution, as defined and regulated under Article 5 of Circular 12/2025 issued by the CNBV on March 20, 2025. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.”*  \n\nThis amendment is effective immediately upon execution of this Addendum and shall govern all future assessments of credit exposure within the Loan Portfolio.\n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 5.4**  \nClause 5.4 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 5.4 is:  \n*“Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basilea III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority.”*  \n\nThis clause is amended to read:  \n*“Capital requirements for the loan portfolio shall be maintained in accordance with Basel III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority, and shall further ensure that counterparty exposure does not exceed fifteen percent (15%) of the net capital of the institution, as specified in Article 5 of Circular 12/2025 issued by the CNBV on March 20, 2025.”*  \n\nThis amendment is effective immediately upon execution of this Addendum and shall govern all capital adequacy assessments and reporting obligations under the Agreement.\n\n---\n\n**ARTICLE 3 — REQUIRED SYSTEMS AND CALCULATIONS UPDATE**  \nThe parties hereby agree that the following actions shall be implemented without delay:  \n\n1. The current numeric limit of twenty percent (20%) for counterparty exposure in all internal risk models, risk dashboards, and credit evaluation systems shall be replaced with fifteen percent (15%) of net capital.  \n2. All downstream calculations, including exposure thresholds, stress testing parameters, and internal risk limits, shall be recalibrated to reflect the new regulatory cap.  \n3. A formal validation report, signed by the Risk Management Officer and the Compliance Officer, shall be submitted to both parties within ten (10) business days of the effective date of this Addendum, confirming that all systems and processes are aligned with the updated exposure limit.  \n4. Any deviation from the 15% threshold must be immediately reported to the Board of Directors and the CNBV, in accordance with the regulatory requirements of Circular 12/2025.  \n\nThis update is classified as **HIGH PRIORITY** and shall be treated as a material change to the Agreement’s risk framework.\n\n---\n\n**GENERAL PROVISIONS**  \n\nAll other provisions of the SOFOM XYZ Loan Portfolio Agreement remain in full force and effect, except as expressly modified herein.  \n\nThis Addendum shall be governed by the laws of the Republic of Venezuela, as applicable to financial institutions and capital adequacy regulations.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n*This Addendum is issued in response to CNBV Circular 12/2025, Article 5, dated March 20, 2025, and is intended to ensure full compliance with the revised counterparty exposure limits for SOFOM institutions.*",
+          "alert_seconds": 28.2
+        },
+        {
+          "contract": "Client Onboarding and AML Policy",
+          "references_real_clause": true,
+          "chars": 3706,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech",
+          "error": null,
+          "draft": "**ADDENDUM TO CLIENT ONBOARDING AND AML POLICY**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the National Banking and Financial Supervision Commission (CNBV) issued Circular 15/2025 — *Requisitos de reporte PLD/AML para instituciones fintech* — on April 05, 2025, which establishes new requirements for anti-money laundering (AML) and beneficial ownership reporting for Financial Technology Institutions (ITF);  \n\nWHEREAS, Article 1 of said Circular 15/2,2025 introduces a new obligation requiring Financial Technology Institutions (ITF) subject to the Fintech Law to implement AML controls equivalent to those required of multiple banking institutions;  \n\nWHEREAS, the Client Onboarding and AML Policy currently governs the institution’s compliance with AML and PLD obligations, including customer due diligence and suspicious activity reporting;  \n\nWHEREAS, the regulatory change necessitates a formal amendment to ensure alignment with the new legal requirements;  \n\nNOW THEREFORE, in order to comply with the provisions of Circular 15/2025, particularly Article 1, the parties hereby agree to the following modifications to the Client Onboarding and AML Policy:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO SECTION 2.1**  \nSection 2.1 of the Client Onboarding and AML Policy is hereby amended as follows:  \n\nThe existing text of Section 2.1 is deleted and replaced with:  \n\n> **Section 2.1: Customer due diligence (CDD) and enhanced due diligence (EDD) procedures must comply with anti-money laundering (AML) and PLD regulations, including FATF/GAFI recommendations and applicable national legislation.**  \n> **In addition, all Financial Technology Institutions (ITF) subject to the Fintech Law shall implement anti-money laundering (AML) controls equivalent to those required of multiple banking institutions, as established under Article 1 of CNBV Circular 15/2025.**  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO SECTION 4.3**  \nSection 4.3 of the Client Onboarding and AML Policy is hereby amended as follows:  \n\nThe existing text of Section 4.3 is deleted and replaced with:  \n\n> **Section 4.3: Suspicious activity reports (SAR) and regulatory disclosure obligations must be submitted within the timeframes established by the applicable AML/PLD regulatory framework. All reporting thresholds shall be updated upon regulatory amendment.**  \n> **In addition, the institution shall ensure that its internal AML controls, including customer onboarding and risk assessment processes, are designed and maintained to meet the AML standards equivalent to those required of multiple banking institutions, as mandated by Article 1 of CNBV Circular 15/2025.**  \n\n---\n\n**ARTICLE 3 — GENERAL PROVISIONS**  \nAll other provisions of the Client Onboarding and AML Policy remain in full force and effect, unless otherwise modified by this Addendum.  \n\nThis Addendum shall be governed by the laws of [JURISDICTION], including all applicable regulations related to anti-money laundering and financial technology.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is subject to review and approval by legal counsel prior to execution to ensure full compliance with applicable regulatory and contractual obligations.*"
+        },
+        {
+          "contract": "Fintech Electronic Payment Service Agreement",
+          "references_real_clause": true,
+          "chars": 3773,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech",
+          "error": null,
+          "draft": "**ADDENDUM TO FINTECH ELECTRONIC PAYMENT SERVICE AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the National Banking and Financial Supervision Commission (CNBV) issued Circular 15/2025 — *Requisitos de reporte PLD/AML para instituciones fintech* on April 05, 2.025, which establishes new requirements for anti-money laundering (AML) controls for Financial Technology Institutions (ITF);  \n\nWHEREAS, Article 1 of said Circular 15/2025 introduces a new obligation requiring Institutions of Financial Technology (ITF) subject to the Fintech Law to implement AML controls equivalent to those required of multiple banking institutions;  \n\nWHEREAS, the Fintech Electronic Payment Service Agreement (the “Agreement”) must be amended to reflect such regulatory obligations in order to ensure full compliance with applicable law and regulatory directives;  \n\nNOW THEREFORE, in consideration of the mutual covenants and obligations herein contained, and for good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 2.3**  \nThe following clause is hereby amended and restated to incorporate the new AML control requirement under CNBV Circular 15/2025:  \n\nClause 2.3 is amended as follows:  \n\n**2.3** Electronic payment processing and crowdfunding activities must comply with the Fintech/ITF Law and any regulations issued by the CNBV or Banxico governing electronic payment institutions and financial technology companies. **In addition, each Institution of Financial Technology (ITF) subject to the Fintech Law shall implement anti-money laundering (AML) controls equivalent to those required of multiple banking institutions, as set forth in CNBV Circular 15/2025, Article 1.**  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 6.1**  \nThe following clause is hereby amended to reflect the expanded reporting obligations under the new AML framework:  \n\nClause 6.1 is amended as follows:  \n\n**6.1** Regulatory reporting, disclosure obligations, and SAR filings shall be performed in accordance with the compliance framework established by the applicable fintech regulatory authority. Reporting thresholds are subject to amendment. **Such reporting obligations shall include, but not be limited to, the mandatory reporting of suspicious transactions in accordance with the AML controls required under CNBV Circular 15/2025, Article 1, and shall be conducted in a manner consistent with the standards applied to multiple banking institutions.**  \n\n---\n\n**GENERAL PROVISIONS**  \n\nAll other provisions of the Fintech Electronic Payment Service Agreement remain in full force and effect, unless otherwise modified by this Addendum.  \n\nThis Addendum shall be governed by and construed in accordance with the laws of the Federal District of Mexico, without regard to conflict of laws principles.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the Parties have caused this Addendum to be executed by their duly authorized representatives as of the date first written above.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is subject to review and approval by legal counsel prior to execution. The Parties acknowledge that the inclusion of the AML controls under CNBV Circular 15/2025 is a direct result of regulatory mandate and is not a recommendation or interpretation of law.*"
+        },
+        {
+          "contract": "Master Investment Agreement — Fintech ABC",
+          "references_real_clause": true,
+          "chars": 4198,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech",
+          "error": null,
+          "draft": "**ADDENDUM TO MASTER INVESTMENT AGREEMENT — FINTECH ABC**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, [PARTY A] and [PARTY B] entered into the Master Investment Agreement — Fintech ABC (the “Agreement”) on [ORIGINAL AGREEMENT DATE], as amended, and the Agreement governs the terms under which investments are made and managed by the parties;  \n\nWHEREAS, the National Banking and Financial Supervision Commission of Mexico (CNBV) issued **Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech**, dated April 05, 2025, which introduces new requirements for Anti-Money Laundering (AML) controls for Financial Technology Institutions (ITF);  \n\nWHEREAS, **Article 1** of Circular 15/2025, specifically, establishes that “Instituciones de Tecnología Financiera (ITF) sujetas a la Ley Fintech deberán implementar controles de antilavado de dinero (AML) equivalentes a los exigidos a la banca múltiple,” thereby imposing a new obligation on fintech entities to implement AML controls equivalent to those required of banking institutions;  \n\nWHEREAS, the obligations under Article 1 of Circular 15/2025 directly impact the operational and compliance framework of the Agreement, particularly in relation to investment due diligence, reporting, and risk management;  \n\nNOW THEREFORE, in order to ensure compliance with the regulatory requirements set forth in Circular 15/2025, and to reflect the new AML obligations imposed on fintech institutions, the parties hereby agree to the following amendments to the Master Investment Agreement — Fintech ABC:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 4.2**  \nThe following clause is hereby amended to incorporate the new AML compliance requirement:  \n\nClause 4.2 is amended as follows:  \n\n**Clause 4.2 (Amended):**  \nThe counterparty exposure limit shall not exceed 20% of the total portfolio value. Any modification to applicable leverage limits imposed by regulatory authorities shall trigger an automatic review of this clause. **Additionally, the counterparty shall implement and maintain effective Anti-Money Laundering (AML) controls, including but not limited to customer due diligence, transaction monitoring, and reporting of suspicious activities, in accordance with the requirements established by the CNBV under Circular 15/2025, Article 1.**  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 7.1**  \nThe following clause is hereby amended to reflect the regulatory requirement for AML compliance in fund allocations:  \n\nClause 7.1 is amended as follows:  \n\n**Clause 7.1 (Amended):**  \nInvestment fund allocations must comply with the limits established by the applicable regulatory authority for mutual funds and investment vehicles, including any fintech-specific restrictions. **Such allocations shall be subject to independent AML review and validation prior to execution, in accordance with the requirements of CNBV Circular 15/2025, Article 1, which mandates equivalent AML controls to those required of banking institutions.**  \n\n---\n\n**ARTICLE 3 — GENERAL PROVISIONS**  \nAll other provisions of the Master Investment Agreement — Fintech ABC remain in full force and effect, except as modified herein.  \n\nThis Addendum shall be governed by the laws of the Federal District of Mexico, without regard to conflict of laws principles.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is subject to review and approval by legal counsel of both parties prior to execution. The parties acknowledge that the regulatory requirement under CNBV Circular 15/2025, Article 1, has been incorporated into the Agreement in a manner consistent with the obligations of a fintech institution under Mexican financial regulation.*"
+        },
+        {
+          "contract": "SOFOM XYZ Loan Portfolio Agreement",
+          "references_real_clause": true,
+          "chars": 4971,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 15/2025 — Requisitos de reporte PLD/AML para instituciones fintech",
+          "error": null,
+          "draft": "**ADDENDUM TO SOFOM XYZ LOAN PORTFOLIO AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the Central Bank of Venezuela (CNBV) issued Circular 15/2025 — *Requisitos de reporte PLD/AML para instituciones fintech* — on April 05, 2.025, which establishes new reporting and anti-money laundering (AML) requirements for Financial Technology Institutions (ITF);  \n\nWHEREAS, Article 1 of said Circular 15/2025 introduces a new obligation requiring Financial Technology Institutions (ITF) subject to the Fintech Law to implement Anti-Money Laundering (AML) controls equivalent to those required of multiple banking institutions;  \n\nWHEREAS, the SOFOM XYZ Loan Portfolio Agreement (the “Agreement”) governs the risk management and compliance obligations of the parties with respect to credit exposure, capital adequacy, and regulatory reporting;  \n\nWHEREAS, the inclusion of AML controls in the risk framework of the Agreement is essential to ensure compliance with the CNBV’s updated regulatory requirements;  \n\nNOW THEREFORE, in order to ensure full compliance with the regulatory obligations imposed by Circular 15/2025, the parties hereby agree to the following amendments to the Agreement, particularly in the area of risk management and governance:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO RISK MANAGEMENT FRAMEWORK**  \n\nThe Risk Management Framework of the SOFOM XYZ Loan Portfolio Agreement shall be amended as follows:  \n\n1.1 A new clause is hereby added to the Agreement, to be inserted immediately following Clause 3.1, as follows:  \n\n> **NEW CLAUSE 3.2 — AML CONTROLS AND COMPLIANCE**  \n> The Parties shall implement and maintain effective Anti-Money Laundering (AML) controls and procedures that are equivalent in scope, design, and operational effectiveness to those required of multiple banking institutions under applicable CNBV regulations. Such controls shall include, but not be limited to, customer due diligence (CDD), ongoing monitoring of transactions, suspicious activity reporting (SAR), and internal audit mechanisms for AML compliance.  \n>  \n> The implementation of such AML controls shall be subject to periodic review and validation by the designated compliance officer, and shall be reported to the Board of Directors and the Risk Committee within ten (10) business days of any material change or incident.  \n\n1.2 The existing Clause 3.1 is hereby amended to read as follows:  \n\n> **CLAUSE 3.1 — CREDIT EXPOSURE AND LEVERAGE RATIOS**  \n> Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.  \n>  \n> In addition, the Parties shall ensure that all credit exposures are subject to AML risk assessments as part of the credit underwriting and portfolio monitoring process, in accordance with the requirements of Circular 15/2025 of the CNBV.  \n\n1.3 The existing Clause 5.4 is hereby amended to read as follows:  \n\n> **CLAUSE 5.4 — CAPITAL REQUIREMENTS FOR LOAN PORTFOLIO**  \n> Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basel III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority.  \n>  \n> Such capital requirements shall be evaluated in light of the AML risk profile of the portfolio, and any material increase in AML-related risk shall trigger a corresponding adjustment in capital adequacy, as determined by the Risk Committee in consultation with the Compliance Officer.  \n\n---\n\n**ARTICLE 2 — GENERAL PROVISIONS**  \n\nAll other provisions of the SOFOM XYZ Loan Portfolio Agreement remain in full force and effect, except as modified herein.  \n\nThe obligations under this Addendum shall be governed by the laws of the Republic of Venezuela, as applicable.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\nThis Addendum shall be binding upon and inure to the benefit of the parties, their successors and permitted assigns.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have caused this Addendum to be executed by their duly authorized representatives as of the date first written above.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is subject to review and approval by legal counsel and compliance officers prior to execution. The Parties acknowledge that the inclusion of AML controls as required by CNBV Circular 15/2025 is a material change to the risk framework and shall be implemented in accordance with applicable regulatory timelines and internal governance procedures.*",
+          "alert_seconds": 34.5
+        },
+        {
+          "contract": "ISDA Derivative Trading Master Agreement",
+          "references_real_clause": true,
+          "chars": 4756,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple",
+          "error": null,
+          "draft": "**ADDENDUM TO ISDA DERIVATIVE TRADING MASTER AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the Parties are parties to an ISDA Derivative Trading Master Agreement (the “Master Agreement”), as in effect on the date hereof and as amended from time to time;  \n\nWHEREAS, on April 15, 2025, the National Banking and Financial Supervision Commission of Mexico (CNBV) issued Circular 18/2025 — *Coeficiente de capital neto Basilea III para banca múltiple* (the “Circular”), which introduces a new requirement under Article 1, stating:  \n\n> “El coeficiente de capital neto (CCN) mínimo requerido para instituciones de banca múltiple se incrementa del diez punto cinco por ciento (10.5%) al doce por ciento (12%) del total de activos ponderados por riesgo.”  \n\nWHEREAS, such regulatory change directly impacts the capital adequacy requirements applicable to derivative exposures under the Master Agreement, particularly in relation to counterparty credit risk and capital thresholds;  \n\nWHEREAS, the Parties agree that the Master Agreement must be amended to reflect the updated capital requirement set forth in the Circular;  \n\nNOW THEREFORE, in consideration of the mutual covenants and obligations herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 6.1**  \nClause 6.1 of the Master Agreement is hereby amended as follows:  \n\nThe current text of Clause 6.1:  \n> “Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions follow Basel III standards.”  \n\nis deleted and replaced with:  \n\n> “Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions shall follow Basel III standards, and specifically, the minimum net capital ratio for multiple banking institutions shall be twelve percent (12%) of total risk-weighted assets, as mandated by Article 1 of Circular 18/2025 issued by the CNBV on April 15, 2. Such requirement shall be applied to all derivative positions, including but not limited to swaps, forwards, and options, and shall govern the calculation of capital adequacy under this Agreement.”  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 8.2**  \nClause 8.2 of the Master Agreement is hereby amended as follows:  \n\nThe current text of Clause 8.2:  \n> “Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates.”  \n\nis deleted and replaced with:  \n\n> “Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates, and specifically, upon any update to the minimum net capital ratio as set forth in Article 1 of Circular 18/2025 issued by the CNBV on April 15, 2025. The Parties shall ensure that all capital calculations, including those related to exposure limits and margin requirements, are adjusted to reflect the twelve percent (12%) minimum net capital ratio, as required by such Circular.”  \n\n---\n\n**GENERAL PROVISIONS**  \n\nAll other provisions of the ISDA Derivative Trading Master Agreement remain in full force and effect, except as modified herein.  \n\nThis Addendum shall be governed by the laws of the Federal District of Mexico, without regard to conflict of laws principles.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\nThe Parties acknowledge that the amendments herein are necessary to ensure compliance with the regulatory requirements of the CNBV as set forth in Circular 18/2025, and that such compliance is a material condition of the ongoing relationship under the Master Agreement.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the Parties have caused this Addendum to be executed by their duly authorized representatives as of the date first written above.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: [DATE]  \n\n---  \n\n*Note: This Addendum is effective upon execution by both Parties and shall take effect immediately upon mutual acceptance and delivery of signed counterparts.*"
+        },
+        {
+          "contract": "SOFOM XYZ Loan Portfolio Agreement",
+          "references_real_clause": true,
+          "chars": 5380,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple",
+          "error": null,
+          "draft": "**ADDENDUM TO SOFOM XYZ LOAN PORTFOLIO AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\n---\n\n**RECITALS**  \n\nWHEREAS, the Central Bank of Venezuela (CNBV) issued Circular 18/2025 — *Coeficiente de capital neto Basilea III para banca múltiple* — on April 15, 2025, which introduces a new regulatory requirement under Article 1, specifying an increased minimum net capital ratio for multiple banking institutions;  \n\nWHEREAS, Article 1 of said Circular 18/2025, Section “limit_modification,” establishes that the minimum net capital ratio (CCN) for multiple banking institutions shall be increased from ten point five percent (10.5%) to twelve percent (12%) of total risk-weighted assets;  \n\nWHEREAS, the SOFOM XYZ Loan Portfolio Agreement (the “Agreement”) currently contains provisions relating to capital adequacy and leverage ratios that are subject to such regulatory change;  \n\nNOW THEREFORE, in order to ensure compliance with the updated regulatory requirements, and in accordance with the provisions of the CNBV Circular 18/2025, the parties hereby agree to the following modifications to the Agreement, specifically in the area of risk management and capital adequacy.  \n\n---\n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 3.1**  \nClause 3.1 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 3.1:  \n*“Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.”*  \n\nis deleted and replaced with:  \n\n**“Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The minimum net capital ratio (CCN) shall be maintained at twelve percent (12%) of total risk-weighted assets, as established under Article 1 of CNBV Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, effective April 15, 2025. This ratio shall be applied in all calculations of capital adequacy, including but not limited to credit exposure, risk-weighted assets, and leverage metrics.”**  \n\n---\n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 5.4**  \nClause 5.4 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 5.4:  \n*“Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basilea III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority.”*  \n\nis deleted and replaced with:  \n\n**“Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basilea III guidelines, including minimum common equity tier 1 capital ratios and a minimum net capital ratio (CCN) of twelve percent (12%) of total risk-weighted assets, as established under Article 1 of CNBV Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, effective April 15, 2025. All capital adequacy calculations, including those related to loan portfolio risk, shall reflect this updated threshold.”**  \n\n---\n\n**ARTICLE 3 — REQUIRED UPDATE AND SYSTEM VERIFICATION**  \nThe parties hereby agree that the following actions shall be implemented immediately upon execution of this Addendum:  \n\n1. The numerical threshold for the minimum net capital ratio in all internal risk models, financial reporting systems, and capital adequacy calculations shall be updated from ten point five percent (10.5%) to twelve percent (12%) of total risk-weighted assets.  \n2. All downstream calculations, including but not limited to risk-weighted asset (RWA) determination, capital coverage ratios, and stress testing outputs, shall be recalibrated to reflect the new CCN requirement.  \n3. A formal verification report, signed by the Chief Risk Officer and Chief Financial Officer of [PARTY A] and [PARTY B], shall be submitted within ten (10) business days of the effective date of this Addendum, confirming that all systems, processes, and documentation are aligned with the updated capital requirement.  \n4. Any deviation from the updated CCN threshold shall be reported to the Board of Directors and the relevant regulatory authorities within twenty-four (24) hours of detection.  \n\n---\n\n**GENERAL PROVISIONS**  \n\nAll other provisions of the SOFOM XYZ Loan Portfolio Agreement remain in full force and effect, except as modified herein.  \n\nThis Addendum shall be governed by the laws of the Republic of Venezuela, without regard to conflict of laws principles.  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\n---\n\n**EXECUTION**  \n\nIN WITNESS WHEREOF, the parties have caused this Addendum to be executed by their duly authorized representatives as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: _________________________  \n\n[PARTY B]  \nBy: ___________________________  \nName: [FULL NAME]  \nTitle: [TITLE]  \nDate: _________________________  \n\n---  \n*This Addendum is effective as of [DATE], and supersedes any prior version of the SOFOM XYZ Loan Portfolio Agreement relating to capital adequacy and risk thresholds.*",
+          "alert_seconds": 21.3
+        }
+      ],
+      "team": [
+        {
+          "contract": "ISDA Derivative Trading Master Agreement",
+          "references_real_clause": true,
+          "chars": 3510,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple",
+          "review_approved": true,
+          "rounds": 1,
+          "reviews": [
+            {
+              "round": 1,
+              "approved": true,
+              "issues": []
+            }
+          ],
+          "agent_failures": [],
+          "tool_calls": 6,
+          "error": null,
+          "draft": "**ADDENDUM TO ISDA DERIVATIVE TRADING MASTER AGREEMENT**  \n**Effective Date:** [DATE]  \n**Parties:** [PARTY A] and [PARTY B]  \n\nWHEREAS, the Parties entered into the ISDA Derivative Trading Master Agreement (the “Agreement”) as of [ORIGINAL DATE], governing derivative transactions between the Parties;  \n\nWHEREAS, on April 15, 2025, the National Banking and Financial Commission of Mexico (CNBV) issued Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple (the “Regulatory Change”), which amended the minimum net capital requirement for multiple banking institutions under Article 3, specifying that the minimum net capital ratio shall be increased from 10.5% to 12% of total risk-weighted assets;  \n\nNOW THEREFORE, in consideration of the foregoing, and for the purposes of compliance with the Regulatory Change, the Parties agree as follows:  \n\n----  \n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 6.1**  \nClause 6.1 of the Agreement is hereby amended as follows:  \n\nThe current text of Clause 6.1 is:  \n“Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions follow Basel III standards.”  \n\nThis clause is hereby amended to read:  \n“Swap, forward, and option transaction limits shall comply with the derivative exposure rules established by the applicable regulatory authority. Capital requirements for derivative positions shall follow Basel III standards, with the minimum net capital ratio for multiple banking institutions set at twelve percent (12%) of total risk-weighted assets, as required under Article 3 of Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, issued by the CNBV on April 15, 2025.”  \n\n----  \n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 8.2**  \nClause 8.2 of the Agreement is hereby amended as follows:  \n\nThe current text of Clause 8.2 is:  \n“Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates.”  \n\nThis clause is hereby amended to read:  \n“Leverage and capital adequacy requirements for derivative instruments shall be recalculated upon any regulatory amendment affecting counterparty credit risk, including changes mandated by Basel/Basilea framework updates, and specifically shall reflect the updated minimum net capital ratio of twelve percent (12%) of total risk-weighted assets as established under Article 3 of Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, issued by the CNBV on April 15, 2025.”  \n\n----  \n\n**GENERAL PROVISIONS**  \nAll other provisions of the ISDA Derivative Trading Master Agreement remain in full force and effect. This Addendum shall be governed by the laws of the State of [JURISDICTION], without regard to conflict of laws principles. This Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\nIN WITNESS WHEREOF, the Parties have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: _________________________  \nName: ______________________  \nTitle: _______________________  \nDate: _______________________  \n\n[PARTY B]  \nBy: _________________________  \nName: ______________________  \nTitle: _______________________  \nDate: _______________________"
+        },
+        {
+          "contract": "SOFOM XYZ Loan Portfolio Agreement",
+          "references_real_clause": true,
+          "chars": 4089,
+          "sections": {
+            "recitals": true,
+            "operative": true,
+            "articles": true,
+            "general_provisions": true,
+            "signature": true
+          },
+          "structure": 1.0,
+          "names_contract": true,
+          "clause_coverage": 1.0,
+          "cites_circular": true,
+          "unsupported_percentages": [],
+          "placeholders": true,
+          "passed": true,
+          "alert": "Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple",
+          "review_approved": true,
+          "rounds": 2,
+          "reviews": [
+            {
+              "round": 1,
+              "approved": false,
+              "issues": [
+                {
+                  "fix": "Regulatory reference error: The draft cites 'Article 3' of Circular 18/2025, but the regulatory text specifies 'Artículo 1'. This is a critical inaccuracy and must be corrected to match the actual regulatory source.",
+                  "problem": "Accuracy — regulator, document title, dates, article and clause references match the sources.",
+                  "section": "ARTICLE 1 — AMENDMENT TO CLAUSE 3.1",
+                  "severity": "blocker"
+                },
+                {
+                  "fix": "Regulatory text specifies a minimum net capital ratio of 12% of total weighted risk assets. However, the draft references 'minimum common equity tier 1 capital ratio' in Clause 5.4, which is not explicitly required in the regulatory text. This introduces an obligation not present in the regulation and violates the principle of fidelity.",
+                  "problem": "Fidelity — no obligation, threshold or deadline that the regulation does not contain.",
+                  "section": "ARTICLE 2 — AMENDMENT TO CLAUSE 5.4",
+                  "severity": "blocker"
+                },
+                {
+                  "fix": "The regulatory text specifies a change from 10.5% to 12% of total weighted risk assets. The draft correctly updates the capital ratio to 12%, but fails to explicitly reference 'total weighted risk assets' as the denominator. The term 'total assets' is used in the original clause and must be replaced with the precise regulatory term to ensure consistency and accuracy.",
+                  "problem": "Accuracy — regulator, document title, dates, article and clause references match the sources.",
+                  "section": "ARTICLE 1 — AMENDMENT TO CLAUSE 3.1",
+                  "severity": "major"
+                },
+                {
+                  "fix": "The draft states that 'all downstream calculations and system thresholds are adjusted accordingly' in the required action, but this is not reflected in any clause of the addendum. This omission violates the requirement to update all downstream elements, and must be explicitly included in the text of the addendum.",
+                  "problem": "Coverage — every required clause modification in the brief is addressed by an article.",
+                  "section": "ARTICLE 1 — AMENDMENT TO CLAUSE 3.1",
+                  "severity": "major"
+                },
+                {
+                  "fix": "The draft does not include a reference to the effective date of the regulatory change (April 15, 2025) in the recitals or in the operative clauses. This omission undermines the temporal applicability of the amendment and violates regulatory compliance timelines.",
+                  "problem": "Accuracy — regulator, document title, dates, article and clause references match the sources.",
+                  "section": "recitals",
+                  "severity": "major"
+                },
+                {
+                  "fix": "The draft uses the term 'Basel/Basilea III' inconsistently — it appears in both the original clause and the amended version. The regulation does not reference 'Basel III' at all. This is a factual inaccuracy and must be corrected to avoid misrepresentation.",
+                  "problem": "Accuracy — regulator, document title, dates, article and clause references match the sources.",
+                  "section": "ARTICLE 2 — AMENDMENT TO CLAUSE 5.4",
+                  "severity": "major"
+                }
+              ]
+            },
+            {
+              "round": 2,
+              "approved": true,
+              "issues": []
+            }
+          ],
+          "agent_failures": [],
+          "tool_calls": 8,
+          "error": null,
+          "draft": "**ADDENDUM TO SOFOM XYZ LOAN PORTFOLIO AGREEMENT**  \n**Effective Date:** April 15, 2025  \n**Parties:** [PARTY A] and [PARTY B]  \n\nWHEREAS, the regulatory framework governing capital adequacy for banking institutions has been amended by the National Banking and Financial Commission (CNBV) through Circular 18/2025, dated April 15, 2025, Article 1, which increases the minimum net capital ratio for multiple banking institutions from ten point five percent (10.5%) to twelve percent (12%) of total weighted risk assets;  \n\nWHEREAS, the SOFOM XYZ Loan Portfolio Agreement (the “Agreement”), in the area of Risk, contains clauses that establish capital requirements and leverage thresholds, and such clauses must be updated to reflect the new regulatory standards;  \n\nWHEREAS, the regulatory change in Circular 18/2025, Article 1, establishes a new minimum net capital ratio of twelve percent (12%) of total weighted risk assets, effective as of April 15, 2025, and requires that all downstream calculations and system thresholds be adjusted to reflect this new requirement;  \n\nNOW THEREFORE, in consideration of the foregoing, and for good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:  \n\n----  \n\n**ARTICLE 1 — AMENDMENT TO CLAUSE 3.1**  \nClause 3.1 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 3.1 is:  \n\"Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV and Basel III standards. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation.\"  \n\nThis clause is hereby amended to read:  \n\"Credit exposure and leverage ratios shall comply with the capital adequacy requirements set forth by the CNBV. The minimum net capital ratio shall be established at twelve percent (12%) of total weighted risk assets, as required under Article 1 of Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, issued by the CNBV on April 15, 2025. The maximum leverage ratio is established at the regulatory threshold in force at the time of each calculation. All downstream calculations and system thresholds related to capital adequacy shall be adjusted to reflect this new minimum net capital ratio.\"  \n\n----  \n\n**ARTICLE 2 — AMENDMENT TO CLAUSE 5.4**  \nClause 5.4 of the SOFOM XYZ Loan Portfolio Agreement is hereby amended as follows:  \n\nThe current text of Clause 5.4 is:  \n\"Capital requirements for the loan portfolio shall be maintained in accordance with Basel/Basilea III guidelines, including minimum common equity tier 1 capital ratios as mandated by the applicable regulatory authority.\"  \n\nThis clause is hereby amended to read:  \n\"Capital requirements for the loan portfolio shall be maintained in accordance with the capital adequacy requirements set forth by the CNBV, including a minimum net capital ratio of twelve percent (12%) of total weighted risk assets, as required under Article 1 of Circular 18/2025 — Coeficiente de capital neto Basilea III para banca múltiple, issued by the CNBV on April 15, 2025. All downstream calculations and system thresholds related to capital adequacy shall be adjusted to reflect this new minimum net capital ratio.\"  \n\n----  \n\n**GENERAL PROVISIONS**  \nAll other provisions of the SOFOM XYZ Loan Portfolio Agreement remain in full force and effect, except as modified herein. This Addendum shall be interpreted in conjunction with the original Agreement.  \n\nThis Addendum shall be governed by the laws of [JURISDICTION].  \n\nThis Addendum may be executed in counterparts, each of which shall be deemed an original, and all of which together shall constitute one and the same instrument.  \n\nIN WITNESS WHEREOF, the Parties have executed this Addendum as of the date first written below.  \n\n[PARTY A]  \nBy: ___________________________  \nName: [NAME]  \nTitle: [TITLE]  \nDate: April 15, 2025  \n\n[PARTY B]  \nBy: ___________________________  \nName: [NAME]  \nTitle: [TITLE]  \nDate: April 15, 2025",
+          "alert_seconds": 56.8,
+          "usage": {
+            "input_tokens": 36955,
+            "output_tokens": 5047
+          }
+        }
+      ]
+    }
+  }
+}

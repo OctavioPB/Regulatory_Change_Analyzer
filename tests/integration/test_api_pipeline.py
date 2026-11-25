@@ -243,3 +243,33 @@ async def test_rbac_enforced_when_api_keys_configured(client, monkeypatch):
         assert (await client.get("/health")).status_code == 200
     finally:
         dependencies._key_map.cache_clear()
+
+
+async def test_diff_baseline_is_the_same_circular_not_the_previous_one(client, session):
+    """Circular 15 must not be diffed against Circular 12; a new version of 12 must be."""
+    from sqlalchemy import select
+
+    from src.models.document import RegulatoryChange
+
+    t0 = datetime(2025, 3, 1, tzinfo=timezone.utc)
+    v1 = "Artículo 5. El límite de contraparte es del 20% del capital neto.\n\nArtículo 6. Plazo de 90 días."
+    v2 = "Artículo 5. El límite de contraparte es del 15% del capital neto.\n\nArtículo 6. Plazo de 90 días."
+    other = "Artículo 1. Umbral de reporte de MXN 100,000 para operaciones electrónicas."
+    c12 = await _insert_document(session, title="Circular 12/2025 — SOFOM", text=v1, published=t0)
+    c15 = await _insert_document(session, title="Circular 15/2025 — PLD", text=other,
+                                 published=t0 + timedelta(days=10))
+    c12b = await _insert_document(session, title="Resolución que modifica la Circular 12/2025", text=v2,
+                                  published=t0 + timedelta(days=20))
+    for doc_id in (c12, c15, c12b):
+        assert (await client.post(f"{API}/documents/{doc_id}/analyze")).status_code == 202
+
+    async def changes(doc_id):
+        rows = await session.execute(select(RegulatoryChange).where(RegulatoryChange.document_id == doc_id))
+        return list(rows.scalars())
+
+    pld = await changes(c15)
+    assert all(c.old_text is None for c in pld)  # analysed on its own, nothing "removed"
+    assert all("removed" not in c.summary.lower() for c in pld)
+    amended = await changes(c12b)
+    assert [c.article_ref for c in amended] == ["artículo 5"]  # only the modified article
+    assert "20%" in (amended[0].old_text or "")

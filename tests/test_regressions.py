@@ -172,9 +172,10 @@ async def test_rag_stream_handles_stop_reason(stop_reason, last_type):
     from src.services import rag_service as svc
 
     client = MagicMock()
-    client.messages.stream = MagicMock(return_value=_FakeStream(["Hi"], stop_reason))
+    client.messages.stream = MagicMock(return_value=_FakeStream(["Hi ", "[REG-1]"], stop_reason))
+    chunk = svc.ContextChunk(1, "regulation", "Circular 1/2025", "CNBV", "Art 1", "text")
     with (
-        patch.object(svc, "_retrieve", new=AsyncMock(return_value=[])),
+        patch.object(svc, "_retrieve", new=AsyncMock(return_value=[chunk])),
         patch.object(svc, "get_client", return_value=client),
         patch.object(svc.settings, "anthropic_api_key", "sk-test"),
     ):

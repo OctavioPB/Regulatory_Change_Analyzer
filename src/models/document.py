@@ -7,9 +7,10 @@ from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from src.config import settings
 from src.database import Base
 
-EMBEDDING_DIM = 384  # all-MiniLM-L6-v2 output dimension
+EMBEDDING_DIM = settings.embedding_dim  # pgvector column size (bge-m3: 1024)
 
 
 class ChangeType(str, enum.Enum):

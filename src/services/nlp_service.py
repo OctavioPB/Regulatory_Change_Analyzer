@@ -6,19 +6,13 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.mapping import embedder
 from src.models.document import RegulatoryChange, RegulatoryDocument
 from src.nlp.pipeline import AnalysisResult, SectionChange, analyze
+from src.nlp.regulation_id import regulation_key, title_prefilter
 from src.repositories import audit_repo
 
 logger = logging.getLogger(__name__)
-
-# Try to import sentence-transformers; if unavailable, embeddings are skipped.
-try:
-    from src.mapping.embedder import embed_batch as _embed_batch
-    _HAS_EMBEDDER = True
-except Exception:
-    _HAS_EMBEDDER = False
-    logger.info("sentence-transformers not available — embeddings will be skipped")
 
 
 @dataclass
@@ -32,8 +26,8 @@ class NlpResult:
 async def analyze_document(document_id: uuid.UUID, db: AsyncSession) -> NlpResult:
     """Run the NLP pipeline on a stored document and persist RegulatoryChange records.
 
-    Looks for a previous version of the same source to compute diffs.
-    If none is found, analyzes the document in isolation (all content is "new").
+    Diffs against the previous version of the same regulation (same source and circular
+    number). If none is found, analyzes the document in isolation (all content is "new").
 
     Args:
         document_id: UUID of the RegulatoryDocument to analyze.
@@ -121,27 +115,37 @@ async def analyze_all_pending(db: AsyncSession) -> dict[str, int]:
     return totals
 
 
+_PREVIOUS_CANDIDATES = 50
+
+
 async def _find_previous_text(doc: RegulatoryDocument, db: AsyncSession) -> str:
-    """Find the most recent earlier document from the same source to use as old_text.
+    """Text of the latest earlier version of the *same* regulation, to diff against.
 
-    Uses the same source and looks for the document published immediately before
-    the current one. This heuristic is reasonable for regulations that are
-    updated periodically (e.g. CNBV circulars that supersede earlier ones).
+    Same source and same circular number (``regulation_key``), published before this
+    document. A title with no recognisable number gets no baseline and is analysed on its
+    own — diffing it against an unrelated circular would invent repeals.
 
-    Returns empty string if no prior document exists.
+    Returns empty string if no prior version exists.
     """
+    key = regulation_key(doc.title)
+    if key is None:
+        logger.debug("No regulation identifier in %r — analysing without a baseline", doc.title)
+        return ""
     result = await db.execute(
-        select(RegulatoryDocument.raw_text)
+        select(RegulatoryDocument.title, RegulatoryDocument.raw_text)
         .where(RegulatoryDocument.source == doc.source)
+        .where(RegulatoryDocument.id != doc.id)
         .where(RegulatoryDocument.publication_date < doc.publication_date)
         .where(RegulatoryDocument.raw_text.isnot(None))
+        .where(RegulatoryDocument.title.ilike(title_prefilter(key)))
         .order_by(RegulatoryDocument.publication_date.desc())
-        .limit(1)
+        .limit(_PREVIOUS_CANDIDATES)
     )
-    prior_text = result.scalar_one_or_none()
-    if prior_text:
-        logger.debug("Found previous version for %s (source=%s)", doc.external_id, doc.source)
-    return prior_text or ""
+    for title, raw_text in result.all():
+        if regulation_key(title) == key:
+            logger.debug("Found previous version of %s for %s", key, doc.external_id)
+            return raw_text or ""
+    return ""
 
 
 async def _embed_sections(changes: list[SectionChange]) -> list[list[float] | None]:
@@ -150,11 +154,11 @@ async def _embed_sections(changes: list[SectionChange]) -> list[list[float] | No
     One batched ``encode`` call is several times faster than one call per
     section, and keeping it off the event loop leaves the API responsive.
     """
-    if not _HAS_EMBEDDER or not changes:
+    if not changes or not await asyncio.to_thread(embedder.available):
         return [None] * len(changes)
     texts = [(c.new_text or "")[:2000] for c in changes]
     try:
-        vectors = await asyncio.to_thread(_embed_batch, texts)
+        vectors = await asyncio.to_thread(embedder.embed_batch, texts)
     except Exception as exc:
         logger.warning("Batch embedding failed: %s", exc)
         return [None] * len(changes)

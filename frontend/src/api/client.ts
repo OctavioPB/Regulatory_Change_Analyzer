@@ -226,6 +226,19 @@ export const api = {
       }),
   },
 
+  agents: {
+    /** Research agent: Claude chains DB lookups before answering (analyst+). */
+    chat: (query: string): Promise<Response> =>
+      fetch(`${BASE}/agents/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      }),
+    /** Drafting team: one drafting subagent per contract + reviewer loop (analyst+). */
+    addendum: (alertId: string): Promise<Response> =>
+      fetch(`${BASE}/agents/addendum/${encodeURIComponent(alertId)}`, { method: "POST" }),
+  },
+
   heatmap: {
     departments: () => request<DepartmentSummary[]>("/heatmap/departments"),
     matrix: () => request<MatrixCell[]>("/heatmap/matrix"),

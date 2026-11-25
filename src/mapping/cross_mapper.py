@@ -22,6 +22,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.mapping.embedder import vector_literal
 from src.mapping.rules_engine import _RULES, apply_rules
 from src.models.document import RegulatoryChange, RegulatoryDocument
 
@@ -29,7 +30,9 @@ logger = logging.getLogger(__name__)
 
 # Cosine similarity thresholds
 _HIGH_SIM = 0.75
-_MIN_SIM = 0.60  # discard candidates below this
+_MIN_SIM = 0.60  # discard candidates below this. Set for all-MiniLM; NOT re-measured for bge-m3 (the
+#                 eval corpus has no SEC rules). Related es↔en pairs measured 0.60-0.675 for clauses,
+#                 and Stage 2 (shared domain) still filters. Measure with a CNBV+SEC corpus.
 
 # When using rules-only fallback, scan at most this many recent changes
 _RULES_ONLY_SCAN_LIMIT = 100
@@ -147,7 +150,7 @@ async def _embedding_candidates(
     rows = await db.execute(
         stmt,
         {
-            "vec": str(change.embedding),
+            "vec": vector_literal(change.embedding),
             "source_jurisdiction": source_jurisdiction,
             "source_id": str(change.id),
             "top_k": top_k,

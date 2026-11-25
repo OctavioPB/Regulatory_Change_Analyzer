@@ -162,12 +162,12 @@ async def seed_demo_contracts(db: AsyncSession = Depends(get_db)) -> dict:
 
 async def _embed_or_none(texts: list[str]) -> list[list[float]] | None:
     """Batch-embed texts in a worker thread; None if the embedder is unavailable."""
-    if not texts:
+    from src.mapping import embedder
+
+    if not texts or not await asyncio.to_thread(embedder.available):
         return None
     try:
-        from src.mapping.embedder import embed_batch
-
-        return await asyncio.to_thread(embed_batch, texts)
+        return await asyncio.to_thread(embedder.embed_batch, texts)
     except Exception as exc:
         logger.warning("Embedding unavailable — clauses stored without vectors: %s", exc)
         return None

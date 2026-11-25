@@ -15,6 +15,7 @@ def _make_doc(**overrides):
     doc.id = uuid.uuid4()
     doc.source = "CNBV"
     doc.external_id = "CNBV-abc123"
+    doc.title = "Circular 12/2025 — Límites SOFOM"
     doc.publication_date = datetime(2025, 3, 20)
     doc.raw_text = (
         "Artículo 5. El límite de contraparte es del 15%.\n\n"
@@ -75,7 +76,7 @@ async def test_analyze_document_creates_changes_for_new_document():
     execute_results = [
         MagicMock(scalar_one_or_none=MagicMock(return_value=doc)),   # document lookup
         MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # not yet analyzed
-        MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # no previous version
+        MagicMock(all=MagicMock(return_value=[])),                   # no previous version
     ]
     db = AsyncMock()
     db.execute = AsyncMock(side_effect=execute_results)
@@ -97,7 +98,10 @@ async def test_analyze_document_uses_prior_version_when_available():
     execute_results = [
         MagicMock(scalar_one_or_none=MagicMock(return_value=doc)),
         MagicMock(scalar_one_or_none=MagicMock(return_value=None)),   # not yet analyzed
-        MagicMock(scalar_one_or_none=MagicMock(return_value=old_text)),  # prior version found
+        MagicMock(all=MagicMock(return_value=[
+            ("Circular 2/2025 — otra regla", "unrelated"),   # prefilter hit, different circular
+            ("Circular 12/2025 — versión anterior", old_text),
+        ])),
     ]
     db = AsyncMock()
     db.execute = AsyncMock(side_effect=execute_results)
@@ -115,6 +119,25 @@ async def test_analyze_document_uses_prior_version_when_available():
     call_args = mock_analyze.call_args
     assert call_args[0][0] == doc.raw_text   # new_text
     assert call_args[0][1] == old_text        # old_text
+
+
+@pytest.mark.asyncio
+async def test_title_without_circular_number_gets_no_baseline():
+    """No identifier → no query for a previous version, so nothing is diffed against another rule."""
+    doc = _make_doc(title="Aviso sobre requisitos de reporte")
+    db = AsyncMock()
+    db.execute = AsyncMock(side_effect=[
+        MagicMock(scalar_one_or_none=MagicMock(return_value=doc)),
+        MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
+    ])
+    db.add = MagicMock()
+
+    with patch("src.services.nlp_service.analyze") as mock_analyze:
+        mock_analyze.return_value = MagicMock(has_changes=False)
+        await analyze_document(doc.id, db)
+
+    assert mock_analyze.call_args[0][1] == ""
+    assert db.execute.await_count == 2
 
 
 # ── analyze_all_pending ───────────────────────────────────────────────────────

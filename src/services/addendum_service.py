@@ -62,6 +62,8 @@ class AddendumItem:
     source: str
     publication_date: str | None
     contract_area: str | None
+    change_id: str | None = None
+    regulation_text: str | None = None
 
 
 @dataclass
@@ -69,6 +71,9 @@ class AddendumContext:
     contract_name: str
     contract_area: str | None
     items: list[AddendumItem] = field(default_factory=list)
+    # (clause_ref, text) of the whole contract, loaded by code so the drafter never depends on
+    # deciding to read it (Legal_AI lesson: small models skip the lookup and invent clause numbers)
+    clauses: list[tuple[str, str]] = field(default_factory=list)
 
     @property
     def primary_doc_title(self) -> str:
@@ -112,8 +117,12 @@ async def fetch_context(alert_id: str, db: AsyncSession) -> list[AddendumContext
             source=row.source,
             publication_date=pub_date,
             contract_area=row.contract_area,
+            change_id=str(row.change_id) if row.change_id else None,
+            regulation_text=row.new_text,
         ))
 
+    for name, clause_ref, clause_text in await _query_clauses(list(groups), db):
+        groups[name].clauses.append((clause_ref or "—", clause_text or ""))
     return list(groups.values())
 
 
@@ -141,7 +150,7 @@ async def stream_draft(
             # Separate consecutive addenda inside the single draft text
             yield _sse("token", text="\n----\n\n")
 
-        if not settings.anthropic_api_key:
+        if not settings.llm_enabled:
             yield _sse("token", text=_fallback_draft(ctx))
             continue
 
@@ -367,6 +376,7 @@ async def _query_items(alert_id: str, db: AsyncSession):
             ii.affected_name,
             ii.affected_ref,
             ii.suggestion,
+            ii.change_id,
             rc.summary       AS change_summary,
             rc.article_ref,
             rc.change_type,
@@ -389,6 +399,34 @@ async def _query_items(alert_id: str, db: AsyncSession):
     )
     result = await db.execute(stmt, {"alert_id": alert_id})
     return result.fetchall()
+
+
+async def _query_clauses(names: list[str], db: AsyncSession) -> list:
+    """Every clause of the named contracts, in clause order."""
+    if not names:
+        return []
+    stmt = text(
+        """
+        SELECT c.name, cc.clause_ref, cc.text
+        FROM contract_clauses cc JOIN contracts c ON c.id = cc.contract_id
+        WHERE c.name = ANY(CAST(:names AS text[]))
+        ORDER BY c.name, cc.clause_ref
+        """
+    )
+    result = await db.execute(stmt, {"names": names})
+    return result.fetchall()
+
+
+_REGULATION_CHARS = 3000   # per change; CNBV articles are a few hundred characters
+_CONTRACT_CHARS = 8000     # whole contract text in the brief, clause by clause
+
+
+_DIFF_METRIC_RE = re.compile(r",?\s*ratio=[\d.]+")
+
+
+def _clean_summary(summary: str) -> str:
+    """Drop the diff similarity score ("ratio=0.96") — models read it as a regulatory figure."""
+    return _DIFF_METRIC_RE.sub("", summary or "")
 
 
 def _build_prompt(ctx: AddendumContext) -> str:
@@ -418,11 +456,24 @@ def _build_prompt(ctx: AddendumContext) -> str:
         lines.append("")
         lines.append(f"  Modification {i}:")
         lines.append(f"  Clause: {item.affected_ref}")
-        lines.append(f"  Regulatory change: {item.change_summary}")
+        lines.append(f"  Regulatory change: {_clean_summary(item.change_summary)}")
+        if item.regulation_text:
+            # Without the actual text the model only sees the diff label and invents figures
+            lines.append(f"  Regulatory text: {item.regulation_text[:_REGULATION_CHARS]}")
         if item.original_clause_text:
             excerpt = item.original_clause_text[:400]
             lines.append(f"  Current clause text (excerpt): {excerpt}")
         lines.append(f"  Required action: {item.suggestion}")
+
+    if ctx.clauses:
+        lines += ["", "CURRENT CONTRACT TEXT (every clause; cite clause numbers exactly as written):"]
+        budget = _CONTRACT_CHARS
+        for ref, body in ctx.clauses:
+            if budget <= 0:
+                lines.append("  [... remaining clauses omitted]")
+                break
+            lines.append(f"  {ref}: {body[:budget]}")
+            budget -= len(body)
 
     lines += [
         "",

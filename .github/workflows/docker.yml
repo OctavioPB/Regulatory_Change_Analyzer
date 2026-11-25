@@ -30,7 +30,7 @@ jobs:
       - name: Smoke test — app imports and routes register
         run: |
           docker run --rm rca-api:ci python -c "from src.api.main import app; print(len(app.routes), 'routes')"
-          # The image includes the [ml] extra — embeddings must import
+          # Embeddings (bge-m3 via Ollama) must import without torch; the [ml] extra is a build arg
           docker run --rm rca-api:ci python -c "import src.mapping.embedder, src.mapping.semantic_mapper; print('ml ok')"
       - name: Validate compose file
         run: |

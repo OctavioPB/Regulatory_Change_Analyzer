@@ -6,14 +6,18 @@ from dataclasses import dataclass
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.mapping.embedder import embed_text
+from src.mapping import embedder
 from src.models.impact import Severity
 
 logger = logging.getLogger(__name__)
 
-# Similarity thresholds for severity assignment
-_HIGH_THRESHOLD = 0.80
-_MEDIUM_THRESHOLD = 0.65
+# Similarity thresholds for severity assignment, for bge-m3 (cross-lingual es→en cosines run lower
+# than all-MiniLM's). Measured 2026-11-25 on the eval corpus: of 132 change×clause pairs the max is
+# 0.675 and the median 0.50; the 6 pairs ≥ 0.60 are all real matches when read (e.g. Circular 12
+# art. 5 "20% counterparty limit" ↔ Master Investment Agreement 4.2 "exposure limit shall not
+# exceed 20%"). Re-measure before changing the model.
+_HIGH_THRESHOLD = 0.70
+_MEDIUM_THRESHOLD = 0.60
 
 
 @dataclass
@@ -44,7 +48,9 @@ async def find_similar_clauses(
     Returns:
         List of ClauseMatch sorted by descending similarity.
     """
-    query_vector = await asyncio.to_thread(embed_text, change_text)
+    if not await asyncio.to_thread(embedder.available):
+        return []
+    query_vector = await asyncio.to_thread(embedder.embed_text, change_text)
 
     stmt = text(
         """
@@ -61,7 +67,7 @@ async def find_similar_clauses(
         """
     )
 
-    result = await db.execute(stmt, {"vec": str(query_vector), "top_k": top_k})
+    result = await db.execute(stmt, {"vec": embedder.vector_literal(query_vector), "top_k": top_k})
     rows = result.fetchall()
 
     matches: list[ClauseMatch] = []

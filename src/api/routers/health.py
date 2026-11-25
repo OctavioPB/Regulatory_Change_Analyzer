@@ -1,4 +1,4 @@
-from importlib.util import find_spec
+import asyncio
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.schemas import HealthOut
 from src.database import get_db
+from src.mapping import embedder
 
 router = APIRouter(tags=["health"])
 
@@ -21,5 +22,5 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthOut:
     return HealthOut(
         status="ok" if db_status == "ok" else "degraded",
         db=db_status,
-        embeddings="available" if find_spec("sentence_transformers") else "disabled",
+        embeddings="available" if await asyncio.to_thread(embedder.available) else "disabled",
     )

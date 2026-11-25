@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.middleware.rate_limit import IngestRateLimitMiddleware
-from src.api.routers import addendum, alerts, audit, chat, contracts, cross_mapping, dashboard, documents, export, health, heatmap, ingestion, tasks, trends
+from src.api.routers import addendum, agents, alerts, audit, chat, contracts, cross_mapping, dashboard, documents, export, health, heatmap, ingestion, tasks, trends
 from src.config import settings
 from src.database import engine, init_db
 
@@ -57,3 +57,4 @@ app.include_router(trends.router, prefix="/api/v1")
 app.include_router(heatmap.router, prefix="/api/v1")
 app.include_router(chat.router, prefix="/api/v1")
 app.include_router(addendum.router, prefix="/api/v1")
+app.include_router(agents.router, prefix="/api/v1")
