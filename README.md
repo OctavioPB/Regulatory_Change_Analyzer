@@ -20,7 +20,7 @@ This automated compliance tool solves the growing challenge of managing complex,
 
 **Documentation:** [Architecture](docs/ARCHITECTURE.md) · [Engineering](docs/ENGINEERING.md) ·
 [Applied AI](docs/APPLIED_AI.md) · [Business Value](docs/BUSINESS_VALUE.md) ·
-[Knowledge Learned](docs/KNOWLEDGE_LEARNED.md) · [Screenshots](docs/README.md#screenshots)
+[Knowledge Learned](docs/KNOWLEDGE_LEARNED.md) · [Screenshots](#screenshots) · [Evals](evals/README.md)
 
 ---
 
@@ -50,14 +50,45 @@ This automated compliance tool solves the growing challenge of managing complex,
 6. **Export** — one-click PDF and Excel reports per alert, with severity color-coding and reviewer notes, ready for audit.
 7. **Task integration** — push impact items directly to Jira or Asana as tickets with severity-mapped priority.
 8. **Multi-jurisdictional cross-mapping** — automatically detects when an SEC rule change has secondary compliance implications for CNBV (and vice versa), using two-stage validation: pgvector cosine similarity + shared regulatory domain filtering. Zero LLM API cost.
-9. **Agents (Claude tool use)** — see [Agents](#agents) below: a research agent for multi-step questions and a multi-agent drafting team (drafter per contract + reviewer).
+9. **Policy chat (RAG)** — cited answers over regulations and contracts, with hybrid (semantic + keyword) retrieval and a citation validator; when an answer cannot be grounded, the system says so instead of guessing.
+10. **Agents (Claude or local models)** — see [Agents](#agents) below: a research agent for multi-step questions and a multi-agent drafting team (drafter per contract + reviewer).
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| **Impact alerts** — one alert per changed article ![Impact alerts](docs/img/alerts.png) | **Review queue** — approve, modify or reject each suggestion ![Review queue](docs/img/reviews.png) |
+| **Policy chat** — answers with validated `[REG-n]`/`[CON-n]` citations ![Policy chat](docs/img/chat-rag.png) | **Research agent** — visible tool steps, multi-hop answer ![Research agent](docs/img/chat-agent.png) |
+| **Risk heatmap** — impacts by department and change type ![Risk heatmap](docs/img/heatmap.png) | **Drafting team** — drafter per contract + reviewer verdicts ![Drafting team](docs/img/addendum-team-progress.png) |
+
+More (documents, trends, pipeline, audit trail, the drafted addendum, the system refusal) in the
+[screenshot gallery](docs/README.md#screenshots). Captured from a demo database with local models
+(gemma4 26B, qwen3 4B, bge-m3 via Ollama).
+
+---
+
+## Documentation
+
+| Document | For | Covers |
+|---|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | Engineers, architects | Components, pipeline, data model, hybrid retrieval, grounding boundary, agents, providers, security, deployment |
+| [Engineering](docs/ENGINEERING.md) | Contributors | Stack, layout, running and testing, conventions, CI, decision log ED-01 – ED-10 |
+| [Applied AI](docs/APPLIED_AI.md) | AI/ML engineers, reviewers | Where AI is (and is not) used, calibrated thresholds, citation validation, agents, eval results |
+| [Business Value](docs/BUSINESS_VALUE.md) | Compliance, risk, legal, sponsors | Problem, before/after, value drivers, safeguards, cost, limits |
+| [Knowledge Learned](docs/KNOWLEDGE_LEARNED.md) | Maintainers | Lessons from building and evaluating, lessons from Legal_AI_Assistant, open findings |
+| [Evals](evals/README.md) | Anyone comparing models | How the code-graded model evaluation works and how to run it |
+
+The full business case is in [planning/Business.md](planning/Business.md) and the original design record in
+[planning/Decisions.md](planning/Decisions.md).
 
 ---
 
 ## Agents
 
-Two features use Claude with tools instead of a single prompt. Both run their tool loop inside the API
-process ([src/agents/loop.py](src/agents/loop.py)), with **read-only** database tools
+Two features use an LLM (Claude or a local model) with tools instead of a single prompt. Both run their
+tool loop inside the API process ([src/agents/loop.py](src/agents/loop.py)), with **read-only** database tools
 ([src/agents/tools.py](src/agents/tools.py)): agents can look things up but never approve, edit or export.
 
 | Feature | Endpoint | How it works |
@@ -67,6 +98,12 @@ process ([src/agents/loop.py](src/agents/loop.py)), with **read-only** database 
 
 Tools: `search_regulations`, `get_regulatory_change`, `find_cross_jurisdiction`, `search_contract_clauses`,
 `get_contract`, `list_impact_alerts`, `get_impact_alert`.
+
+| Research agent | Drafting team |
+|---|---|
+| ![Research agent](docs/img/chat-agent.png) | ![Drafting team](docs/img/addendum-team-progress.png) |
+
+How the agents are built and what the evaluations found: [Applied AI §5–6](docs/APPLIED_AI.md#5-agents).
 
 ### Local models (Ollama)
 
@@ -83,11 +120,12 @@ LLM_MODEL=qwen3:4b-instruct-2507-q4_K_M
 OLLAMA_URL=http://localhost:11434
 ```
 
-Model comparisons live in [evals/](evals/README.md) (`python -m evals.run --model ollama:<tag> ...`).
+Model comparisons live in [evals/](evals/README.md) (`python -m evals.run --model ollama:<tag> ...`);
+results are summarised in [Applied AI §6](docs/APPLIED_AI.md#6-evaluation).
 
 Both endpoints need the **analyst** role and spend several model calls per request (the drafting team
-reports its token usage when it finishes). Without `ANTHROPIC_API_KEY` the research agent falls back to the
-classic RAG chat and the team returns template drafts, so demos and tests still work.
+reports its token usage when it finishes). With no LLM configured (no `ANTHROPIC_API_KEY` and
+`LLM_PROVIDER=anthropic`) the research agent falls back to the classic RAG chat and the team returns template drafts, so demos and tests still work.
 
 ---
 
@@ -105,7 +143,7 @@ classic RAG chat and the team returns template drafts, so demos and tests still 
 | Task integration | Jira REST API v3, Asana REST API |
 | Export | reportlab (PDF), openpyxl (Excel) |
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
-| Testing | pytest, pytest-asyncio, hypothesis, Vitest — 248 unit + 18 integration + 7 frontend tests |
+| Testing | pytest, pytest-asyncio, hypothesis, Vitest — 249 unit + 18 integration + 10 frontend tests |
 | Infrastructure | Docker, docker compose (PostgreSQL + pgvector, Redis) |
 
 ---
@@ -151,7 +189,7 @@ classic RAG chat and the team returns template drafts, so demos and tests still 
 ├── evals/                      # model evals: cases, runner, stored runs
 ├── docs/                       # architecture, engineering, applied AI,
 │                               # business value, knowledge learned, screenshots
-├── tests/                      # 248 unit + 18 integration tests
+├── tests/                      # 249 unit + 18 integration tests
 ├── alembic/                    # DB migrations
 │   └── versions/
 │       ├── 001_performance_indexes.py    # B-tree + HNSW vector indexes
@@ -538,7 +576,7 @@ DATABASE_URL=postgresql+asyncpg://rca_user:rca_pass@localhost:55432/regulatory_t
 cd frontend && npm test && npm run build
 ```
 
-Current status: **248 unit + 18 integration + 7 frontend tests passing**.
+Current status: **249 unit + 18 integration + 10 frontend tests passing**.
 
 ### Continuous integration (`.github/workflows/`)
 
@@ -624,6 +662,10 @@ The `/{source}` wildcard route was matching before the static `/analyze` route. 
 
 ## Architecture decisions
 
+The main ones are summarised here. The complete log (ED-01 – ED-10, with context and consequences) is in
+[docs/ENGINEERING.md](docs/ENGINEERING.md#7-engineering-decisions), and the component view in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 **Why positional matching for numeric changes?**
 When "20% … 30%" appears in a 60-character sentence, both percentages share the same 80-character context window, making context-based matching ambiguous. Positional zip (`N`-th percentage in old ↔ `N`-th in new) is simpler and correct for amended provisions where sentence structure stays the same.
 
@@ -670,10 +712,19 @@ The ingest endpoints are low-volume (manual triggers or beat tasks), not a high-
 - [x] Sprint 6 — Task integration (Jira/Asana), RBAC, pagination, performance indexes, rate limiting
 - [x] Multi-jurisdictional cross-mapping (SEC ↔ CNBV), zero LLM cost
 - [x] OPB brand system applied to dashboard (Fraunces / Plus Jakarta Sans, navy/gold, Pipeline page with live activity log)
-- [ ] Automated addendum drafting via Claude API
-- [ ] Predictive alerts from proposed rules
-- [ ] "Chat with Policy" — RAG interface for compliance officers
-- [ ] Multilingual support (Portuguese, French for ESMA)
+- [x] Automated addendum drafting (single call, or multi-agent draft + review)
+- [x] Predictive trend signals from proposed rules and no-action letters
+- [x] Risk heatmap by department
+- [x] "Chat with Policy" — RAG with validated citations, plus a research agent
+- [x] Local models via Ollama (qwen, gemma) and multilingual embeddings (bge-m3)
+- [x] Code-graded model evaluation ([evals/](evals/README.md))
+- [ ] Lawyer-reviewed evaluation cases on real circulars and contracts
+- [ ] Evaluate Claude against the local models; choose the model per feature on evidence
+- [ ] Re-measure the cross-jurisdiction threshold with a CNBV + SEC corpus; top-5 vs top-8 retrieval
+- [ ] CLM integration (DocuSign CLM, Icertis, Sirion)
+- [ ] More sources (CONDUSEF, Banxico) and languages (Portuguese, French for ESMA)
+
+Open findings with their evidence: [Knowledge Learned §7](docs/KNOWLEDGE_LEARNED.md#7-open-findings).
 
 ---
 

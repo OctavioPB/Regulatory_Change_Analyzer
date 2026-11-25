@@ -16,7 +16,7 @@ the engineering decisions behind the current state. For the component picture, s
 | NLP | difflib, regex extractors, rules engine; `bge-m3` embeddings via Ollama (sentence-transformers optional) |
 | LLM | Anthropic SDK (`claude-opus-5-5`) or Ollama (`qwen3:4b-instruct-2507-q4_K_M`, `gemma4:26b-a4b-it-qat`) |
 | Documents | pypdf, python-docx, ReportLab (PDF), openpyxl (XLSX) |
-| Frontend | React 18, Vite, TypeScript, Tailwind, Vitest |
+| Frontend | React 18, Vite, TypeScript, Tailwind, react-markdown (GFM, no raw HTML), Vitest |
 | Quality | ruff, pytest (+ asyncio, hypothesis, coverage), CodeQL, GitHub Actions |
 
 About 8,700 lines of Python in `src/` and 4,900 lines of TypeScript in `frontend/src/`.
@@ -69,9 +69,9 @@ The provider settings live in `.env`:
 
 | Suite | Command | What it covers |
 |---|---|---|
-| Unit (248) | `python -m pytest` | Services, NLP, mapping, agents (scripted fake model), grounding, Ollama adapter, embedder, graders |
+| Unit (249) | `python -m pytest` | Services, NLP, mapping, agents (scripted fake model), grounding, Ollama adapter, embedder, graders |
 | Integration (18) | `DATABASE_URL=…_test python -m pytest -m integration` | Full HTTP pipeline against Postgres + pgvector, agent tools, migrations-sensitive paths |
-| Frontend (7) | `cd frontend && npm test && npm run build` | SSE parser, components; `tsc` type-check |
+| Frontend (10) | `cd frontend && npm test && npm run build` | SSE parser, Markdown rendering (no raw HTML), components; `tsc` type-check |
 | Evals | `python -m evals.run --model ollama:<tag> [--embeddings on]` | Real models through the real endpoints, graded by code ([evals/README.md](../evals/README.md)) |
 
 Testing rules:

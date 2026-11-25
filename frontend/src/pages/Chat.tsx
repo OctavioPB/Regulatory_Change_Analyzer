@@ -5,6 +5,7 @@ import {
 import { api, type ChatCitation } from "../api/client";
 import { readSSE } from "../api/sse";
 import { Eyebrow } from "../components/Eyebrow";
+import Markdown from "../components/Markdown";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -205,13 +206,13 @@ function MessageBubble({ msg }: { msg: Message }) {
             fontSize: "13px",
             lineHeight: "1.65",
             fontFamily: "var(--fb)",
-            whiteSpace: "pre-wrap",
+            whiteSpace: isUser ? "pre-wrap" : undefined,
             borderTopRightRadius: isUser ? 4 : undefined,
             borderTopLeftRadius: isUser ? undefined : 4,
             boxShadow: "0 1px 3px rgba(0,0,0,.06)",
           }}
         >
-          {msg.text}
+          {isUser ? msg.text : <Markdown text={msg.text} />}
           {msg.streaming && (
             <span
               style={{

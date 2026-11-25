@@ -170,6 +170,5 @@ see §7.
 | Top-5 retrieval drops relevant articles as the corpus grows | AML question refused in the demo database with 3 SEC docs added | Measure top-5 vs top-8 on a larger corpus |
 | Cross-jurisdiction floor (0.60) not re-measured for bge-m3 | Eval corpus has no SEC data | Build a CNBV+SEC probe set |
 | qwen gives up on multi-hop agent questions | 5/9 in every run | Use gemma (or Claude) for the agent; pick a model per task on evidence |
-| Chat shows raw Markdown (`**`, `###`) | Visible in the agent screenshot | Render Markdown safely in `Chat.tsx` |
 | Claude never evaluated | No API key configured | Run the same eval with `anthropic:claude-opus-5-5` (billed) |
 | Eval cases not lawyer-reviewed | Developer-written, synthetic corpus | Lawyer review before quoting figures |
