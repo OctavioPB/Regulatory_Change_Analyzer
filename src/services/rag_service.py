@@ -91,7 +91,7 @@ async def query(user_question: str, db: AsyncSession) -> ChatResponse:
     chunks = await _retrieve(user_question, db)
     context_xml, citations = _build_context(chunks)
 
-    if not settings.anthropic_api_key:
+    if not settings.llm_enabled:
         return ChatResponse(
             answer="[LLM not configured] No ANTHROPIC_API_KEY set. Retrieved context:\n\n" + context_xml,
             citations=citations,
@@ -150,7 +150,7 @@ async def stream_query(
     ]
     yield _sse("citations", citations=cit_payload)
 
-    if not settings.anthropic_api_key:
+    if not settings.llm_enabled:
         fallback = (
             "[LLM not configured — set ANTHROPIC_API_KEY]\n\n"
             "Retrieved context snippet:\n\n"

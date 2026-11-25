@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Bot, User, ChevronDown, ChevronUp, BookOpen, FileText } from "lucide-react";
+import {
+  Send, Bot, User, ChevronDown, ChevronUp, BookOpen, FileText, Workflow, Loader2, Check, X,
+} from "lucide-react";
 import { api, type ChatCitation } from "../api/client";
+import { readSSE } from "../api/sse";
 import { Eyebrow } from "../components/Eyebrow";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface AgentStep {
+  id: string;
+  tool: string;
+  input: Record<string, unknown>;
+  status: "running" | "ok" | "error";
+  summary?: string;
+  /** Text the agent wrote just before this lookup ("Let me check the circular…") */
+  note?: string;
+}
 
 interface Message {
   id: string;
@@ -11,6 +24,23 @@ interface Message {
   text: string;
   citations: ChatCitation[];
   streaming: boolean;
+  steps: AgentStep[];
+}
+
+const TOOL_LABELS: Record<string, string> = {
+  search_regulations: "Searched regulations",
+  get_regulatory_change: "Read regulatory change",
+  find_cross_jurisdiction: "Checked other jurisdiction",
+  search_contract_clauses: "Searched contract clauses",
+  get_contract: "Opened contract",
+  list_impact_alerts: "Listed impact alerts",
+  get_impact_alert: "Opened impact alert",
+};
+
+function describeInput(input: Record<string, unknown>): string {
+  const v = input.query ?? input.contract_name ?? input.change_id ?? input.alert_id ?? input.severity;
+  if (typeof v !== "string") return "";
+  return /^[0-9a-f-]{36}$/i.test(v) ? v.slice(0, 8) : `"${v}"`;
 }
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -90,6 +120,50 @@ function CitationCard({ c }: { c: ChatCitation }) {
   );
 }
 
+// ── Agent steps ───────────────────────────────────────────────────────────────
+
+function AgentSteps({ steps, running }: { steps: AgentStep[]; running: boolean }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div
+      className="w-full rounded-lg px-3 py-2"
+      style={{ border: "1px dashed var(--primary-30)", background: "rgba(0,51,102,.03)", fontSize: "12px" }}
+    >
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="flex items-center gap-1.5 font-body"
+        style={{ color: "var(--primary)", fontWeight: 600 }}
+      >
+        <Workflow size={12} />
+        {running ? "Agent researching" : "Agent research"} · {steps.length} step{steps.length !== 1 ? "s" : ""}
+        {open ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+      </button>
+      {open && (
+        <ol className="mt-1.5 flex flex-col gap-1">
+          {steps.map((s) => (
+            <li key={s.id} className="font-body flex flex-col" style={{ color: "var(--dark)" }}>
+              {s.note && (
+                <span style={{ color: "var(--mid)", fontStyle: "italic", whiteSpace: "pre-wrap" }}>{s.note}</span>
+              )}
+              <span className="flex items-center gap-1.5">
+                {s.status === "running" ? (
+                  <Loader2 size={11} className="animate-spin" style={{ color: "var(--primary)" }} />
+                ) : s.status === "ok" ? (
+                  <Check size={11} style={{ color: "var(--primary)" }} />
+                ) : (
+                  <X size={11} style={{ color: "#b41414" }} />
+                )}
+                {TOOL_LABELS[s.tool] ?? s.tool}
+                <span style={{ color: "var(--mid)" }}>{describeInput(s.input)}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 // ── Message bubble ────────────────────────────────────────────────────────────
 
 function MessageBubble({ msg }: { msg: Message }) {
@@ -117,6 +191,10 @@ function MessageBubble({ msg }: { msg: Message }) {
 
       {/* Content */}
       <div className={`flex flex-col gap-2 max-w-[78%] ${isUser ? "items-end" : "items-start"}`}>
+        {!isUser && msg.steps.length > 0 && (
+          <AgentSteps steps={msg.steps} running={msg.streaming} />
+        )}
+
         {/* Bubble */}
         <div
           className="rounded-2xl px-4 py-3"
@@ -180,6 +258,7 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [agentMode, setAgentMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -203,6 +282,7 @@ export function Chat() {
       text: queryText.trim(),
       citations: [],
       streaming: false,
+      steps: [],
     };
 
     // Placeholder assistant message (streaming)
@@ -213,65 +293,43 @@ export function Chat() {
       text: "",
       citations: [],
       streaming: true,
+      steps: [],
     };
 
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
 
+    const update = (fn: (m: Message) => Message) =>
+      setMessages((prev) => prev.map((m) => (m.id === assistantId ? fn(m) : m)));
+
     try {
-      const res = await api.chat.stream(queryText.trim());
-      if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-      if (!res.body) throw new Error("No response body");
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let citations: ChatCitation[] = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const evt = JSON.parse(line.slice(6));
-            if (evt.type === "token") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, text: m.text + evt.text } : m
-                )
-              );
-            } else if (evt.type === "citations") {
-              citations = evt.citations as ChatCitation[];
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, citations } : m
-                )
-              );
-            } else if (evt.type === "done") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, streaming: false } : m
-                )
-              );
-            } else if (evt.type === "error") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, text: `Error: ${evt.message}`, streaming: false }
-                    : m
-                )
-              );
-            }
-          } catch {
-            // Ignore malformed SSE lines
-          }
+      const q = queryText.trim();
+      const res = await (agentMode ? api.agents.chat(q) : api.chat.stream(q));
+      await readSSE(res, (evt) => {
+        if (evt.type === "token") {
+          update((m) => ({ ...m, text: m.text + evt.text }));
+        } else if (evt.type === "step" && evt.status === "running") {
+          // Text streamed before a lookup is the agent narrating: file it under the step
+          update((m) => ({
+            ...m,
+            text: "",
+            steps: [
+              ...m.steps,
+              { id: evt.id, tool: evt.tool, input: evt.input ?? {}, status: "running", note: m.text.trim() || undefined },
+            ],
+          }));
+        } else if (evt.type === "step") {
+          update((m) => ({
+            ...m,
+            steps: m.steps.map((st) => (st.id === evt.id ? { ...st, status: evt.status, summary: evt.summary } : st)),
+          }));
+        } else if (evt.type === "citations") {
+          update((m) => ({ ...m, citations: evt.citations as ChatCitation[] }));
+        } else if (evt.type === "done") {
+          update((m) => ({ ...m, streaming: false }));
+        } else if (evt.type === "error") {
+          update((m) => ({ ...m, text: `Error: ${evt.message}`, streaming: false }));
         }
-      }
+      });
     } catch (e) {
       setMessages((prev) =>
         prev.map((m) =>
@@ -426,9 +484,20 @@ export function Chat() {
             <Send size={15} />
           </button>
         </div>
-        <p className="font-body mt-2 text-center" style={{ fontSize: "11px", color: "var(--mid)" }}>
-          Enter to send · Shift+Enter for new line · Answers cite sources from your regulatory database
-        </p>
+        <div className="mt-2 flex items-center justify-center gap-4">
+          <label
+            className="flex items-center gap-1.5 font-body cursor-pointer select-none"
+            style={{ fontSize: "11px", color: agentMode ? "var(--primary)" : "var(--mid)", fontWeight: agentMode ? 600 : 400 }}
+            title="The agent decides what to look up and can chain several lookups (slower, uses more tokens, analyst role)"
+          >
+            <input type="checkbox" checked={agentMode} onChange={(e) => setAgentMode(e.target.checked)} disabled={busy} />
+            <Workflow size={11} />
+            Agent mode
+          </label>
+          <p className="font-body" style={{ fontSize: "11px", color: "var(--mid)" }}>
+            Enter to send · Shift+Enter for new line · Answers cite sources from your regulatory database
+          </p>
+        </div>
       </div>
 
       {/* Blinking cursor animation */}

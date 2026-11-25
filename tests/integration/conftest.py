@@ -43,6 +43,7 @@ def _no_embeddings_no_llm(monkeypatch):
     monkeypatch.setattr(impact_service, "_HAS_SEMANTIC", False)
     # Never spend real tokens from a developer's .env during tests
     monkeypatch.setattr(settings, "anthropic_api_key", "")
+    monkeypatch.setattr(settings, "llm_provider", "anthropic")  # nor a local model from .env
 
 
 @pytest.fixture

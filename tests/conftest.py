@@ -1,6 +1,14 @@
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _default_llm_provider(monkeypatch):
+    """Tests assume the Claude provider; a local LLM_PROVIDER=ollama in .env must not leak in."""
+    from src.config import settings
+
+    monkeypatch.setattr(settings, "llm_provider", "anthropic")
+
+
 @pytest.fixture
 def sample_cnbv_rss() -> str:
     """Minimal DOF RSS feed with one CNBV-relevant entry."""

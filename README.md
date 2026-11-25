@@ -43,6 +43,44 @@ This automated compliance tool solves the growing challenge of managing complex,
 6. **Export** — one-click PDF and Excel reports per alert, with severity color-coding and reviewer notes, ready for audit.
 7. **Task integration** — push impact items directly to Jira or Asana as tickets with severity-mapped priority.
 8. **Multi-jurisdictional cross-mapping** — automatically detects when an SEC rule change has secondary compliance implications for CNBV (and vice versa), using two-stage validation: pgvector cosine similarity + shared regulatory domain filtering. Zero LLM API cost.
+9. **Agents (Claude tool use)** — see [Agents](#agents) below: a research agent for multi-step questions and a multi-agent drafting team (drafter per contract + reviewer).
+
+---
+
+## Agents
+
+Two features use Claude with tools instead of a single prompt. Both run their tool loop inside the API
+process ([src/agents/loop.py](src/agents/loop.py)), with **read-only** database tools
+([src/agents/tools.py](src/agents/tools.py)): agents can look things up but never approve, edit or export.
+
+| Feature | Endpoint | How it works |
+|---------|----------|--------------|
+| **Research agent** (Chat → *Agent mode*) | `POST /api/v1/agents/chat` | Claude decides what to look up and chains lookups — search regulations, open the full text, list alerts, open a contract, check the other jurisdiction — then answers citing `[REG-n]` / `[CON-n]`. The UI shows every step. Max 10 steps. |
+| **Drafting team** (Addendum → *Multi-agent*) | `POST /api/v1/agents/addendum/{alert_id}` | An orchestrator fans out one **drafting subagent per contract** (3 in parallel, max 10 per alert). Each reads the full regulation and contract before drafting. A **reviewer agent** checks coverage, references, invented requirements and form, returning structured issues; blocker/major issues send the draft back to the same drafter, up to 2 revisions. Drafts that still have open issues are flagged, never hidden. |
+
+Tools: `search_regulations`, `get_regulatory_change`, `find_cross_jurisdiction`, `search_contract_clauses`,
+`get_contract`, `list_impact_alerts`, `get_impact_alert`.
+
+### Local models (Ollama)
+
+Every LLM feature (RAG chat, addendum drafting, both agents) can run on a local model instead of Claude.
+[src/services/ollama_client.py](src/services/ollama_client.py) exposes Ollama behind the same
+`messages.stream` / `messages.create` surface the app already uses, translating tool calls and JSON-schema
+output. Nothing leaves the machine and no API key is needed:
+
+```bash
+ollama pull qwen3:4b-instruct-2507-q4_K_M      # or gemma4:26b-a4b-it-qat
+# .env
+LLM_PROVIDER=ollama
+LLM_MODEL=qwen3:4b-instruct-2507-q4_K_M
+OLLAMA_URL=http://localhost:11434
+```
+
+Model comparisons live in [evals/](evals/README.md) (`python -m evals.run --model ollama:<tag> ...`).
+
+Both endpoints need the **analyst** role and spend several model calls per request (the drafting team
+reports its token usage when it finishes). Without `ANTHROPIC_API_KEY` the research agent falls back to the
+classic RAG chat and the team returns template drafts, so demos and tests still work.
 
 ---
 
@@ -73,7 +111,9 @@ This automated compliance tool solves the growing challenge of managing complex,
 │   │   ├── middleware/         # rate_limit (sliding window on ingest endpoints)
 │   │   └── routers/            # alerts, audit, contracts, cross_mapping,
 │   │                           # dashboard, documents, export, health,
-│   │                           # ingestion, tasks
+│   │                           # ingestion, tasks, chat, addendum, agents
+│   ├── agents/                 # Claude tool-use loop, read-only DB tools,
+│   │                           # research agent, drafting team
 │   ├── ingestion/              # CNBV and SEC scrapers
 │   ├── integrations/           # task manager adapters (Jira, Asana)
 │   ├── mapping/                # embedder, semantic_mapper, rules_engine,
@@ -99,7 +139,7 @@ This automated compliance tool solves the growing challenge of managing complex,
 │   ├── seed_cnbv.py            # insert synthetic CNBV docs (dev — DOF RSS offline)
 │   ├── run_analysis.py         # run NLP pipeline on pending documents
 │   └── map_impacts.py          # map changes to contract impacts
-├── tests/                      # 169 tests (unit + integration)
+├── tests/                      # 197 unit + 17 integration tests
 ├── alembic/                    # DB migrations
 │   └── versions/
 │       ├── 001_performance_indexes.py    # B-tree + HNSW vector indexes
@@ -437,6 +477,13 @@ celery -A src.worker.celery_app beat --loglevel=info
 | Method | Endpoint | Role required | Description |
 |--------|----------|---------------|-------------|
 | `GET` | `/api/v1/audit/` | viewer | List audit log entries |
+
+### Agents
+
+| Method | Endpoint | Role required | Description |
+|--------|----------|---------------|-------------|
+| `POST` | `/api/v1/agents/chat` | analyst | Research agent (SSE: `step`, `token`, `citations`, `done`/`error`) |
+| `POST` | `/api/v1/agents/addendum/{alert_id}` | analyst | Drafting team (SSE: `plan`, `agent`, `review`, `draft`, `done`/`error`) |
 
 Full interactive docs: `http://localhost:8000/docs`
 

@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,9 +15,19 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://rca_user:rca_pass@localhost:5432/regulatory_db"
     database_url_sync: str = "postgresql://rca_user:rca_pass@localhost:5432/regulatory_db"
 
-    # LLM
+    # LLM — "anthropic" (Claude API) or "ollama" (local models such as Qwen / Gemma)
+    llm_provider: Literal["anthropic", "ollama"] = "anthropic"
     anthropic_api_key: str = ""
+    # Claude model id, or an Ollama tag (e.g. "qwen3:4b-instruct-2507-q4_K_M") when provider is ollama
     llm_model: str = "claude-opus-5-5"
+    ollama_url: str = "http://localhost:11434"
+    ollama_num_ctx: int = 32768       # Ollama defaults to 4096, too small for agent transcripts
+    ollama_timeout_s: float = 900.0   # large local models can be slow on partial GPU offload
+
+    @property
+    def llm_enabled(self) -> bool:
+        """Whether LLM features run for real (else they use their no-LLM fallbacks)."""
+        return self.llm_provider == "ollama" or bool(self.anthropic_api_key)
 
     # Storage
     data_dir: Path = Path("./data")

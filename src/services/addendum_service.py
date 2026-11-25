@@ -62,6 +62,8 @@ class AddendumItem:
     source: str
     publication_date: str | None
     contract_area: str | None
+    change_id: str | None = None
+    regulation_text: str | None = None
 
 
 @dataclass
@@ -112,6 +114,8 @@ async def fetch_context(alert_id: str, db: AsyncSession) -> list[AddendumContext
             source=row.source,
             publication_date=pub_date,
             contract_area=row.contract_area,
+            change_id=str(row.change_id) if row.change_id else None,
+            regulation_text=row.new_text,
         ))
 
     return list(groups.values())
@@ -141,7 +145,7 @@ async def stream_draft(
             # Separate consecutive addenda inside the single draft text
             yield _sse("token", text="\n----\n\n")
 
-        if not settings.anthropic_api_key:
+        if not settings.llm_enabled:
             yield _sse("token", text=_fallback_draft(ctx))
             continue
 
@@ -367,6 +371,7 @@ async def _query_items(alert_id: str, db: AsyncSession):
             ii.affected_name,
             ii.affected_ref,
             ii.suggestion,
+            ii.change_id,
             rc.summary       AS change_summary,
             rc.article_ref,
             rc.change_type,
@@ -389,6 +394,14 @@ async def _query_items(alert_id: str, db: AsyncSession):
     )
     result = await db.execute(stmt, {"alert_id": alert_id})
     return result.fetchall()
+
+
+_DIFF_METRIC_RE = re.compile(r",?\s*ratio=[\d.]+")
+
+
+def _clean_summary(summary: str) -> str:
+    """Drop the diff similarity score ("ratio=0.96") — models read it as a regulatory figure."""
+    return _DIFF_METRIC_RE.sub("", summary or "")
 
 
 def _build_prompt(ctx: AddendumContext) -> str:
@@ -418,7 +431,10 @@ def _build_prompt(ctx: AddendumContext) -> str:
         lines.append("")
         lines.append(f"  Modification {i}:")
         lines.append(f"  Clause: {item.affected_ref}")
-        lines.append(f"  Regulatory change: {item.change_summary}")
+        lines.append(f"  Regulatory change: {_clean_summary(item.change_summary)}")
+        if item.regulation_text:
+            # Without the actual text the model only sees the diff label and invents figures
+            lines.append(f"  Regulatory text (excerpt): {item.regulation_text[:800]}")
         if item.original_clause_text:
             excerpt = item.original_clause_text[:400]
             lines.append(f"  Current clause text (excerpt): {excerpt}")
