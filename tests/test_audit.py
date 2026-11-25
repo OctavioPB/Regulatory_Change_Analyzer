@@ -81,6 +81,7 @@ async def test_analyze_document_writes_audit_on_success():
     doc.id = doc_id
     doc.source = "CNBV"
     doc.external_id = "CNBV-abc"
+    doc.title = "Circular 12/2025"
     doc.raw_text = "Artículo 5. El límite de contraparte es del 15%."
 
     db = AsyncMock()
@@ -89,7 +90,7 @@ async def test_analyze_document_writes_audit_on_success():
     db.execute = AsyncMock(side_effect=[
         MagicMock(scalar_one_or_none=MagicMock(return_value=doc)),   # doc lookup
         MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # not yet analyzed
-        MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # no prior version
+        MagicMock(all=MagicMock(return_value=[])),                   # no prior version
     ])
 
     with patch("src.services.nlp_service.audit_repo.log", new_callable=AsyncMock) as mock_log:

@@ -60,12 +60,18 @@ _PCT_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s?%")
 _CIRCULAR_RE = re.compile(r"\b(\d{1,3}/\d{4})\b")
 
 
+def _canon(num: str) -> str:
+    """"12.0" and "12" are the same figure; "10.50" and "10.5" too."""
+    num = num.replace(",", ".")
+    return num.rstrip("0").rstrip(".") if "." in num else num
+
+
 def _pct_values(text: str) -> set[str]:
-    return {m.replace(",", ".") for m in _PCT_RE.findall(text or "")}
+    return {_canon(m) for m in _PCT_RE.findall(text or "")}
 
 
 def _numbers(text: str) -> set[str]:
-    return {m.replace(",", ".") for m in re.findall(r"\d+(?:[.,]\d+)?", norm(text))}
+    return {_canon(m) for m in re.findall(r"\d+(?:[.,]\d+)?", norm(text))}
 
 
 def parse_sse(body: str) -> list[dict]:
@@ -188,12 +194,15 @@ async def run_qa(client, suite: str, truth: dict) -> list[dict]:
         elapsed = time.monotonic() - t0
         events = parse_sse(res.text) if res.status_code == 200 else []
         error = None if res.status_code == 200 else f"HTTP {res.status_code}"
-        tokens, citations, steps, done = [], [], [], None
+        tokens, citations, steps, done, retrieved = [], [], [], None, 0
         for e in events:
             if e["type"] == "token":
                 tokens.append(e["text"])
+            elif e["type"] == "reset":
+                tokens.clear()  # the server rejected that answer; a corrected one or the refusal follows
             elif e["type"] == "citations":
                 citations = e["citations"]
+                retrieved = max(retrieved, len(citations))
             elif e["type"] == "step" and e.get("status") == "running":
                 tokens.clear()  # text before a tool call is narration, not the answer
                 steps.append({"tool": e["tool"], "input": e.get("input")})
@@ -208,7 +217,9 @@ async def run_qa(client, suite: str, truth: dict) -> list[dict]:
         facts = case.facts
         grade = grade_answer(case, facts, answer, citations, error)
         row = {"case": case.id, "answerable": case.answerable, "seconds": round(elapsed, 1),
-               "retrieved_sources": len(citations), "answer": answer, **grade}
+               "retrieved_sources": retrieved, "answer": answer,
+               "regenerations": (done or {}).get("regenerations", 0),
+               "system_refusal": bool((done or {}).get("refused")), **grade}
         if suite == "agent":
             row.update({
                 "steps": len(steps),
@@ -411,7 +422,9 @@ def summarize(model_results: dict) -> dict:
 def write_markdown(path: Path, meta: dict, summary: dict) -> None:
     lines = [f"# Eval run {meta['run_id']}", "",
              f"- Started: {meta['started']}  ·  finished: {meta['finished']}",
-             f"- Suites: {', '.join(meta['suites'])}  ·  retrieval: keyword (embeddings off)",
+             f"- Suites: {', '.join(meta['suites'])}  ·  retrieval: "
+             f"{meta.get('retrieval', 'keyword (embeddings off)')}",
+             f"- Code: commit {meta.get('commit', '?')}" + (" + uncommitted changes" if meta.get("dirty") else ""),
              "- Cases: developer-written over synthetic data, graded by code. Not lawyer-reviewed.", ""]
     for suite, cols in (
         ("rag", ["pass", "answerable_pass", "refusal_accuracy", "false_refusals", "answerable_without_context",
@@ -476,20 +489,21 @@ async def main(args) -> int:
         print("DATABASE_URL must point at a *_eval or *_test database (it is TRUNCATEd).", file=sys.stderr)
         return 2
 
-    # Deterministic retrieval: no embedding model (same as the integration tests)
-    sys.modules["src.mapping.embedder"] = None
     sys.stdout.reconfigure(encoding="utf-8")
     import logging
     import httpx
 
-    import src.services.impact_service as impact_service
-    import src.services.nlp_service as nlp_service
     from src.api.main import app
     from src.config import settings
+    from src.mapping import embedder
 
     logging.disable(logging.INFO)  # keep the progress log readable; warnings still show
-    nlp_service._HAS_EMBEDDER = False
-    impact_service._HAS_SEMANTIC = False
+    if args.embeddings == "off":  # keyword-only retrieval, rules-only mapping
+        settings.embedding_provider = "none"
+    elif not embedder.available():
+        print(f"--embeddings on, but {settings.embedding_provider}:{settings.embedding_model} is not "
+              "available (Ollama running? model pulled?)", file=sys.stderr)
+        return 2
 
     if args.regrade:
         return await regrade(Path(args.regrade))
@@ -499,7 +513,9 @@ async def main(args) -> int:
     out_dir = RUNS / run_id
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = {"run_id": run_id, "started": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "suites": suites, "models": args.model}
+            "suites": suites, "models": args.model, **_git_state(),
+            "retrieval": ("keyword (embeddings off)" if settings.embedding_provider == "none" else
+                          f"hybrid: {settings.embedding_provider}:{settings.embedding_model} + keyword, RRF")}
     if not args.model:
         print("--model is required (or --regrade)", file=sys.stderr)
         return 2
@@ -549,6 +565,19 @@ async def main(args) -> int:
     return 0
 
 
+def _git_state() -> dict:
+    """Commit and dirty flag, so a report can be tied to the code that produced it."""
+    import subprocess
+
+    def git(*a):
+        return subprocess.run(["git", *a], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+
+    try:
+        return {"commit": git("rev-parse", "--short", "HEAD"), "dirty": bool(git("status", "--porcelain"))}
+    except OSError:
+        return {}
+
+
 def _parse(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--regrade", help="re-grade an existing report.json against the same eval DB")
@@ -557,6 +586,9 @@ def _parse(argv=None):
     p.add_argument("--suites", default=",".join(ALL_SUITES))
     p.add_argument("--team-alerts", type=int, default=1, help="alerts to run the drafting team on")
     p.add_argument("--label", default="")
+    p.add_argument("--embeddings", choices=["off", "on"], default="off",
+                   help="off: keyword retrieval (deterministic); on: hybrid with the configured "
+                        "embedder (default bge-m3 via Ollama)")
     return p.parse_args(argv)
 
 

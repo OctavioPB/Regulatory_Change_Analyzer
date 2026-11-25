@@ -7,8 +7,8 @@ Flow for one impact alert:
    most ``CONCURRENCY`` at a time. The split is known in advance (one
    addendum per contract), so coordination is deterministic code — an LLM
    orchestrator would add cost and latency without deciding anything.
-2. **Drafting subagent** (one per contract): reads the full regulatory text
-   and the full contract with tools, then writes the addendum.
+2. **Drafting subagent** (one per contract): gets the full regulatory text
+   and every contract clause in its brief (loaded by code), then writes the addendum.
 3. **Reviewer agent**: independently checks the draft against the source
    regulation and the clause text, returning structured issues. Blocker or
    major issues send the draft back to the same drafter (it keeps its
@@ -51,9 +51,9 @@ _BLOCKING = {"blocker", "major"}
 
 DRAFTER_SYSTEM = addendum_service._SYSTEM_PROMPT + """
 
-TOOLS: before drafting, read the full text of each triggering regulatory change
-(get_regulatory_change) and the full contract (get_contract) — the excerpts in the request
-are truncated. Quote clause references and article numbers exactly as they appear there.
+SOURCES: the request already contains the full text of each triggering regulatory change and
+every clause of the contract. Draft from them; quote clause references and article numbers
+exactly as they appear there. Use the tools only if something you need is missing.
 
 OUTPUT: your final message must contain only the complete addendum text — no preamble,
 no commentary, no markdown code fences."""
@@ -61,7 +61,8 @@ no commentary, no markdown code fences."""
 REVIEWER_SYSTEM = """You are a senior compliance counsel reviewing an AI-drafted contract addendum
 before it reaches the legal team. Be rigorous and specific; do not rewrite the draft.
 
-Check, using the tools to read the source regulation and the contract text:
+Check against the regulation text and the contract clauses included in the brief (use the tools
+only if something is missing):
 1. COVERAGE — every required clause modification in the brief is addressed by an article.
 2. ACCURACY — regulator, document title, dates, article and clause references match the sources.
 3. FIDELITY — no obligation, threshold or deadline that the regulation does not contain.
@@ -297,7 +298,7 @@ async def _forward(events, contract_name: str, role: str, round_: int, emit: Emi
 def _sources_block(contract: AddendumContext) -> str:
     ids = sorted({i.change_id for i in contract.items if i.change_id})
     return (
-        "\nSOURCES (use the tools):\n"
+        "\nSOURCE IDS (for the tools, if needed):\n"
         f"  contract_name: {contract.contract_name}\n"
         + "".join(f"  change_id: {cid}\n" for cid in ids)
     )

@@ -41,8 +41,13 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_result_backend: str = "redis://localhost:6379/1"
 
-    # Embeddings
-    embedding_model: str = "all-MiniLM-L6-v2"
+    # Embeddings (src/mapping/embedder.py). bge-m3 via Ollama: multilingual es/en, 1024 dims.
+    # EMBEDDING_DIM is the pgvector column size: changing model/dim needs `alembic upgrade head`
+    # and `python scripts/reembed.py`. For the [ml] extra: sentence-transformers +
+    # all-MiniLM-L6-v2 + 384 (English-only).
+    embedding_provider: Literal["ollama", "sentence-transformers", "none"] = "ollama"
+    embedding_model: str = "bge-m3"
+    embedding_dim: int = 1024
 
     # Scraping
     scrape_interval_hours: int = 24

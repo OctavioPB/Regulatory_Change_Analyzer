@@ -28,17 +28,21 @@ python -m evals.run \
   --model anthropic:claude-opus-5-5          # skipped unless ANTHROPIC_API_KEY is set (billed)
 
 python -m evals.run --suites rag,agent --model ollama:qwen3:4b-instruct-2507-q4_K_M   # a subset
+python -m evals.run --embeddings on --model ...   # hybrid retrieval with bge-m3 (needs `ollama pull bge-m3`)
 python -m evals.run --regrade evals/runs/<run>/report.json   # re-grade stored outputs, no model calls
 ```
 
-Results go to `evals/runs/<timestamp>-<label>/report.{json,md}`; the JSON keeps every answer and draft.
+Results go to `evals/runs/<timestamp>-<label>/report.{json,md}`; the JSON keeps every answer and draft,
+plus the commit, whether the tree had uncommitted changes, and the retrieval mode. Q&A rows record
+`regenerations` and `system_refusal` (the validator in `src/services/grounding.py`).
 
 ## Limits
 
 - 9 Q&A cases, 3 alerts for single-call drafting, 1 alert for the team. One case moves a rate by
   10+ points, so small differences between models are noise.
 - Synthetic corpus (3 CNBV circulars, 6 demo contracts), developer-written cases, no lawyer review.
-- Retrieval is keyword-only (embeddings off) for determinism. Questions asked in English against
+- `--embeddings off` (default) is keyword-only retrieval, deterministic. `--embeddings on` uses the
+  configured embedder (bge-m3 via Ollama) with hybrid retrieval. Questions asked in English against
   Spanish circulars often retrieve nothing in `rag`; `answerable_without_context` counts those, so a
   retrieval miss is not read as a model failure.
 - Local models run with temperature 0 and a fixed seed, and without "thinking".

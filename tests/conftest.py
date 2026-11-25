@@ -7,6 +7,11 @@ def _default_llm_provider(monkeypatch):
     from src.config import settings
 
     monkeypatch.setattr(settings, "llm_provider", "anthropic")
+    # ...and a running Ollama must not turn embeddings on (no network in unit tests)
+    from src.mapping import embedder
+
+    monkeypatch.setattr(settings, "embedding_provider", "none")
+    embedder.reset_probe()
 
 
 @pytest.fixture

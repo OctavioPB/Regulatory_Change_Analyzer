@@ -9,11 +9,18 @@
 ![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
 ![React + Vite](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black)
 ![Claude](https://img.shields.io/badge/LLM-Claude-D97757?logo=anthropic&logoColor=white)
+![Ollama](https://img.shields.io/badge/local-Ollama%20%C2%B7%20bge--m3-000000?logo=ollama&logoColor=white)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 An automated compliance tool that monitors regulatory publications from **CNBV** (Mexico's National Banking and Securities Commission) and the **SEC** (U.S. Securities and Exchange Commission), detects what changed between versions, maps the impact to your internal contracts and processes, and generates actionable recommendations — with a review workflow and PDF/Excel export for audit purposes.
 
 This automated compliance tool solves the growing challenge of managing complex, cross-border regulatory shifts by replacing manual tracking with real-time, AI-driven monitoring. By instantly connecting updates from the CNBV and SEC to your specific internal contracts and workflows, the platform eliminates the risk of human error and prevents costly non-compliance penalties. It streamlines the entire audit trail through built-in review cycles and easy exports, allowing legal and operations teams to focus on strategy rather than hunting for changes. Ultimately, this project is a high-value investment in risk mitigation, ensuring the organization stays ahead of shifting laws while significantly reducing the man-hours required for regulatory oversight.
+
+![Dashboard](docs/img/dashboard.png)
+
+**Documentation:** [Architecture](docs/ARCHITECTURE.md) · [Engineering](docs/ENGINEERING.md) ·
+[Applied AI](docs/APPLIED_AI.md) · [Business Value](docs/BUSINESS_VALUE.md) ·
+[Knowledge Learned](docs/KNOWLEDGE_LEARNED.md) · [Screenshots](docs/README.md#screenshots)
 
 ---
 
@@ -36,8 +43,8 @@ This automated compliance tool solves the growing challenge of managing complex,
 ```
 
 1. **Ingestion** — fetches CNBV circulars (via DOF RSS, when available) and SEC press releases (via SEC RSS), extracts text from PDFs and HTML pages, and stores them in PostgreSQL.
-2. **NLP pipeline** — splits regulatory text into sections, computes section-level diffs against the previous version, extracts dates/articles/percentages/penalties, classifies change types (new requirement, limit modification, repeal, deadline, etc.), and detects specific numeric changes (e.g. 20% → 15%).
-3. **Impact mapping** — finds similar contract clauses using pgvector cosine similarity (sentence-transformers embeddings) and applies a keyword rules engine to flag contract types/areas by regulatory domain (SOFOM/credit, derivatives, AML/PLD, data privacy, fintech, capital requirements, investment funds).
+2. **NLP pipeline** — splits regulatory text into sections, computes section-level diffs against the previous version of the same regulation (matched by circular number; documents without one are analysed on their own), extracts dates/articles/percentages/penalties, classifies change types (new requirement, limit modification, repeal, deadline, etc.), and detects specific numeric changes (e.g. 20% → 15%).
+3. **Impact mapping** — finds similar contract clauses using pgvector cosine similarity (bge-m3 embeddings via Ollama) and applies a keyword rules engine to flag contract types/areas by regulatory domain (SOFOM/credit, derivatives, AML/PLD, data privacy, fintech, capital requirements, investment funds).
 4. **Recommendations** — generates templated, human-readable suggestions per impacted clause, scored by severity (High / Medium / Low).
 5. **Human-in-the-loop** — compliance officers Approve, Modify, or Reject each suggestion through the dashboard. All decisions are immutably logged.
 6. **Export** — one-click PDF and Excel reports per alert, with severity color-coding and reviewer notes, ready for audit.
@@ -55,8 +62,8 @@ process ([src/agents/loop.py](src/agents/loop.py)), with **read-only** database 
 
 | Feature | Endpoint | How it works |
 |---------|----------|--------------|
-| **Research agent** (Chat → *Agent mode*) | `POST /api/v1/agents/chat` | Claude decides what to look up and chains lookups — search regulations, open the full text, list alerts, open a contract, check the other jurisdiction — then answers citing `[REG-n]` / `[CON-n]`. The UI shows every step. Max 10 steps. |
-| **Drafting team** (Addendum → *Multi-agent*) | `POST /api/v1/agents/addendum/{alert_id}` | An orchestrator fans out one **drafting subagent per contract** (3 in parallel, max 10 per alert). Each reads the full regulation and contract before drafting. A **reviewer agent** checks coverage, references, invented requirements and form, returning structured issues; blocker/major issues send the draft back to the same drafter, up to 2 revisions. Drafts that still have open issues are flagged, never hidden. |
+| **Research agent** (Chat → *Agent mode*) | `POST /api/v1/agents/chat` | Claude decides what to look up and chains lookups — search regulations, open the full text, list alerts, open a contract, check the other jurisdiction — then answers citing `[REG-n]` / `[CON-n]`. Citations are validated (one correction turn, then a system-written refusal). The UI shows every step. Max 10 steps. |
+| **Drafting team** (Addendum → *Multi-agent*) | `POST /api/v1/agents/addendum/{alert_id}` | An orchestrator fans out one **drafting subagent per contract** (3 in parallel, max 10 per alert). Each gets the full regulation text and every contract clause in its brief, loaded by code (small models skip optional lookups and invent clause numbers). A **reviewer agent** checks coverage, references, invented requirements and form, returning structured issues; blocker/major issues send the draft back to the same drafter, up to 2 revisions. Drafts that still have open issues are flagged, never hidden. |
 
 Tools: `search_regulations`, `get_regulatory_change`, `find_cross_jurisdiction`, `search_contract_clauses`,
 `get_contract`, `list_impact_alerts`, `get_impact_alert`.
@@ -92,13 +99,13 @@ classic RAG chat and the team returns template drafts, so demos and tests still 
 | Auth | API key RBAC (viewer / analyst / compliance_officer / admin) |
 | Database | PostgreSQL 16 + pgvector (cosine similarity search) |
 | ORM | SQLAlchemy 2.x async, Alembic migrations |
-| NLP | difflib (section comparison), regex patterns (entity extraction), sentence-transformers `all-MiniLM-L6-v2` (embeddings) |
+| NLP | difflib (section comparison), regex patterns (entity extraction), `bge-m3` via Ollama (multilingual embeddings; sentence-transformers optional) |
 | Scraping | httpx, feedparser, BeautifulSoup4, pypdf, python-docx |
 | Task queue | Celery + Redis (scheduled scraping) |
 | Task integration | Jira REST API v3, Asana REST API |
 | Export | reportlab (PDF), openpyxl (Excel) |
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
-| Testing | pytest, pytest-asyncio, hypothesis, Vitest — 180 unit + 14 integration + 5 frontend tests |
+| Testing | pytest, pytest-asyncio, hypothesis, Vitest — 248 unit + 18 integration + 7 frontend tests |
 | Infrastructure | Docker, docker compose (PostgreSQL + pgvector, Redis) |
 
 ---
@@ -120,13 +127,14 @@ classic RAG chat and the team returns template drafts, so demos and tests still 
 │   │                           # cross_mapper
 │   ├── models/                 # SQLAlchemy ORM models (incl. cross_mapping)
 │   ├── nlp/                    # section_splitter, comparator, extractor,
-│   │                           # classifier, pipeline
+│   │                           # classifier, pipeline, regulation_id
 │   ├── parsing/                # PDF and DOCX text extractors
 │   ├── recommendations/        # suggestion template engine
 │   ├── repositories/           # DB access (audit, contract, cross_mapping,
 │   │                           # document, impact)
-│   ├── services/               # ingestion, nlp, impact, export,
-│   │                           # cross_mapping, task services
+│   ├── services/               # ingestion, nlp, impact, export, cross_mapping,
+│   │                           # task, rag, retrieval (hybrid), grounding,
+│   │                           # addendum, llm + ollama_client
 │   └── storage/                # local file storage (raw + processed)
 ├── frontend/                   # React dashboard (Vite + Tailwind + OPB brand)
 │   └── src/
@@ -138,12 +146,18 @@ classic RAG chat and the team returns template drafts, so demos and tests still 
 │   ├── ingest_source.py        # scrape one or all sources
 │   ├── seed_cnbv.py            # insert synthetic CNBV docs (dev — DOF RSS offline)
 │   ├── run_analysis.py         # run NLP pipeline on pending documents
-│   └── map_impacts.py          # map changes to contract impacts
-├── tests/                      # 197 unit + 17 integration tests
+│   ├── map_impacts.py          # map changes to contract impacts
+│   └── reembed.py              # fill/refresh embeddings after a model change
+├── evals/                      # model evals: cases, runner, stored runs
+├── docs/                       # architecture, engineering, applied AI,
+│                               # business value, knowledge learned, screenshots
+├── tests/                      # 248 unit + 18 integration tests
 ├── alembic/                    # DB migrations
 │   └── versions/
 │       ├── 001_performance_indexes.py    # B-tree + HNSW vector indexes
-│       └── 002_cross_jurisdiction_links.py
+│       ├── 002_cross_jurisdiction_links.py
+│       ├── 003_trend_signals.py
+│       └── 004_embedding_dimension.py    # resize vectors to EMBEDDING_DIM
 ├── docker-compose.yml
 └── pyproject.toml
 ```
@@ -175,18 +189,23 @@ source .venv/bin/activate
 # Core app + test tooling (~250 MB)
 pip install -e ".[dev]"
 
-# Optional: semantic features (~1.3 GB with CPU torch)
-pip install --index-url https://download.pytorch.org/whl/cpu torch
-pip install -e ".[dev,ml]"
+# Semantic features: bge-m3 through Ollama (multilingual es/en, 1024 dims, no torch)
+ollama pull bge-m3
 ```
 
-| Install | Impact mapping | Chat retrieval | Cross-jurisdiction |
+| Embeddings | Impact mapping | Chat / agent retrieval | Cross-jurisdiction |
 |---|---|---|---|
-| `.[dev]` | keyword rules engine (R001–R008) | keyword search over regulation text | rules-only (shared domains) |
-| `.[dev,ml]` | rules **+** clause-level semantic similarity | pgvector similarity search | embeddings + shared domains |
+| unavailable (`EMBEDDING_PROVIDER=none`, or Ollama down) | keyword rules engine (R001–R008) | keyword search | rules-only (shared domains) |
+| `bge-m3` via Ollama (default) | rules **+** clause-level semantic similarity | **hybrid**: semantic + keyword, rank-fused (RRF) | embeddings + shared domains |
 
-`GET /health` reports `"embeddings": "available"` or `"disabled"`. The Docker image always includes `[ml]`.
-Documents analyzed while embeddings were disabled keep a `NULL` vector; re-analyze them after installing `[ml]` to include them in semantic search.
+bge-m3 is multilingual, so an English question finds a Spanish circular; keyword search cannot.
+`EMBEDDING_PROVIDER=sentence-transformers` (with `pip install -e ".[dev,ml]"`, `all-MiniLM-L6-v2`, `EMBEDDING_DIM=384`)
+is the English-only alternative.
+
+`GET /health` reports `"embeddings": "available"` or `"disabled"`. Rows embedded while embeddings were
+unavailable keep a `NULL` vector: `python scripts/reembed.py` fills them. **Switching model or dimension**
+(e.g. an existing 384-dim database): `alembic upgrade head` (resizes the columns, emptying old vectors),
+then `python scripts/reembed.py`. Until then the startup check disables embeddings instead of failing inserts.
 
 ### 2. Configure environment variables
 
@@ -200,7 +219,9 @@ Edit `.env`:
 DATABASE_URL=postgresql+asyncpg://rca_user:rca_pass@localhost:5432/regulatory_db
 REDIS_URL=redis://localhost:6379/0
 ANTHROPIC_API_KEY=sk-ant-...          # optional — reserved for future LLM features
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+EMBEDDING_PROVIDER=ollama              # bge-m3 via Ollama; none = keyword only
+EMBEDDING_MODEL=bge-m3
+EMBEDDING_DIM=1024
 LOG_LEVEL=INFO
 
 # RBAC — comma-separated key:role pairs. Leave as "{}" to disable auth (dev mode).
@@ -246,7 +267,8 @@ This creates all tables (including `cross_jurisdiction_links`) and enables the `
 alembic upgrade head
 ```
 
-This applies performance indexes (B-tree on FK columns, HNSW vector index on clause embeddings).
+This applies performance indexes (B-tree on FK columns, HNSW vector index on clause embeddings) and resizes
+the embedding columns to `EMBEDDING_DIM` if needed (then run `python scripts/reembed.py`).
 
 ### 6. Start the API server
 
@@ -516,7 +538,7 @@ DATABASE_URL=postgresql+asyncpg://rca_user:rca_pass@localhost:55432/regulatory_t
 cd frontend && npm test && npm run build
 ```
 
-Current status: **180 unit + 14 integration + 5 frontend tests passing**.
+Current status: **248 unit + 18 integration + 7 frontend tests passing**.
 
 ### Continuous integration (`.github/workflows/`)
 
@@ -608,8 +630,21 @@ When "20% … 30%" appears in a 60-character sentence, both percentages share th
 **Why `_SIMILARITY_THRESHOLD = 0.02` instead of 0.30?**
 A single word change ("20%" → "15%") in a 40-character section produces a change ratio of ≈ 0.05. In compliance, every change matters — a higher threshold silently dropped real regulatory changes.
 
-**Why sentence-transformers instead of Legal-BERT?**
-`all-MiniLM-L6-v2` is already used in the OPB AI Mastery Lab stack (ChromaDB), produces 384-dim embeddings compatible with pgvector, runs on CPU for this use case, and doesn't require fine-tuning for Spanish/English financial text at this scale.
+**Why bge-m3 via Ollama instead of all-MiniLM-L6-v2?**
+The circulars are in Spanish and questions often come in English; `all-MiniLM-L6-v2` is English-only, so those
+questions retrieved nothing (evals, 2026-11-25). `bge-m3` is multilingual, has an 8192-token window, runs in the
+Ollama runtime the local LLMs already use (no torch, ~2 GB less to install) and is the embedder of the sibling
+Legal_AI_Assistant project. Similarity floors were re-calibrated for it on the eval corpus (see
+`src/services/retrieval.py`, `src/mapping/semantic_mapper.py`); the cross-jurisdiction floor still needs a
+CNBV+SEC corpus to be re-measured.
+
+**Why validate citations and let code write the refusal?**
+Lessons from Legal_AI_Assistant (ADR-007): a model asked to "say you don't know" explains and still answers,
+and small models cite tags they never saw. So every chat/agent answer goes through a pure validator
+([src/services/grounding.py](src/services/grounding.py)): each `[REG-n]`/`[CON-n]` must be a source the model
+was shown, example markers are rejected, at least one citation is required. A failing answer is regenerated
+once with feedback written by code; if it still fails, or nothing was retrieved (no model call at all), the
+system returns a fixed refusal. The validator proves provenance, not faithfulness.
 
 **Why two mapping paths (semantic + rules engine)?**
 Semantic similarity catches clauses that are conceptually related but don't share keywords (e.g. "exposure limit" ≈ "límite de contraparte"). The keyword rules engine catches contracts by type/area even before they've been embedded — useful when a new contract type is uploaded without re-running the full pipeline.

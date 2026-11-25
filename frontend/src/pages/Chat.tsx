@@ -322,6 +322,9 @@ export function Chat() {
             ...m,
             steps: m.steps.map((st) => (st.id === evt.id ? { ...st, status: evt.status, summary: evt.summary } : st)),
           }));
+        } else if (evt.type === "reset") {
+          // The server rejected the answer (bad citations) — a corrected one or the refusal follows
+          update((m) => ({ ...m, text: "" }));
         } else if (evt.type === "citations") {
           update((m) => ({ ...m, citations: evt.citations as ChatCitation[] }));
         } else if (evt.type === "done") {

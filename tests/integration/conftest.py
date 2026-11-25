@@ -12,7 +12,6 @@ non-deterministic); impact mapping then runs through the rules engine, and
 RAG retrieval through the text-search fallback.
 """
 import os
-import sys
 from urllib.parse import urlparse
 
 import pytest
@@ -32,15 +31,12 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(autouse=True)
 def _no_embeddings_no_llm(monkeypatch):
-    # Any lazy `from src.mapping.embedder import ...` now raises ImportError,
-    # which every caller already treats as "embeddings unavailable".
-    monkeypatch.setitem(sys.modules, "src.mapping.embedder", None)
-    import src.services.impact_service as impact_service
-    import src.services.nlp_service as nlp_service
+    # A developer's Ollama must not make results depend on the machine: embeddings off
     from src.config import settings
+    from src.mapping import embedder
 
-    monkeypatch.setattr(nlp_service, "_HAS_EMBEDDER", False)
-    monkeypatch.setattr(impact_service, "_HAS_SEMANTIC", False)
+    monkeypatch.setattr(settings, "embedding_provider", "none")
+    embedder.reset_probe()
     # Never spend real tokens from a developer's .env during tests
     monkeypatch.setattr(settings, "anthropic_api_key", "")
     monkeypatch.setattr(settings, "llm_provider", "anthropic")  # nor a local model from .env

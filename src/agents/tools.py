@@ -21,7 +21,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.loop import Tool
-from src.services.rag_service import _keywords
+from src.services import retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,10 @@ class AgentContext:
         prefix = "REG" if kind == "regulation" else "CON"
         return f"{prefix}-{existing['ref_id']}"
 
+    def tags(self) -> list[str]:
+        """Every tag handed to the model so far, in registration order."""
+        return [f"{'REG' if c['type'] == 'regulation' else 'CON'}-{c['ref_id']}" for c in self.sources.values()]
+
     def cited_in(self, answer: str) -> list[dict]:
         """Sources whose tag appears in the final answer, in ref order."""
         out = []
@@ -82,24 +86,6 @@ def _date(dt) -> str | None:
     return dt.strftime("%Y-%m-%d") if dt else None
 
 
-def _patterns(query: str) -> list[str]:
-    # "_" is an ILIKE wildcard — escape it like rag_service does
-    return [f"%{w.replace('_', chr(92) + '_')}%" for w in _keywords(query)]
-
-
-async def _query_vector(query: str) -> list[float] | None:
-    """Embedding of ``query`` when the optional [ml] extra is installed."""
-    try:
-        from src.mapping.embedder import embed_text
-    except ImportError:
-        return None
-    try:
-        return await asyncio.to_thread(embed_text, query)
-    except Exception as exc:  # model download / runtime failure → keyword search
-        logger.warning("Query embedding failed (%s) — using keyword search", exc)
-        return None
-
-
 class _Input(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -113,41 +99,7 @@ class SearchRegulationsInput(_Input):
 
 
 async def search_regulations(ctx: AgentContext, args: SearchRegulationsInput) -> list[dict]:
-    vec = await _query_vector(args.query)
-    src_filter = "AND upper(rd.source) = :source" if args.source else ""
-    params: dict = {"limit": args.limit, "source": args.source}
-    if vec is not None:
-        rows = await ctx.fetch(
-            f"""
-            SELECT rc.id, rc.article_ref, rc.change_type, rc.summary, rc.new_text,
-                   rd.title AS doc_title, rd.source, rd.publication_date
-            FROM regulatory_changes rc JOIN regulatory_documents rd ON rd.id = rc.document_id
-            WHERE rc.embedding IS NOT NULL {src_filter}
-            ORDER BY rc.embedding <=> CAST(:vec AS vector)
-            LIMIT :limit
-            """,
-            {**params, "vec": str(vec)},
-        )
-    else:
-        patterns = _patterns(args.query)
-        if not patterns:
-            return []
-        rows = await ctx.fetch(
-            f"""
-            SELECT * FROM (
-                SELECT rc.id, rc.article_ref, rc.change_type, rc.summary, rc.new_text,
-                       rd.title AS doc_title, rd.source, rd.publication_date,
-                       (SELECT count(*) FROM unnest(CAST(:patterns AS text[])) AS p
-                         WHERE rc.new_text ILIKE p OR rc.summary ILIKE p OR rd.title ILIKE p) AS hits
-                FROM regulatory_changes rc JOIN regulatory_documents rd ON rd.id = rc.document_id
-                WHERE true {src_filter}
-            ) ranked
-            WHERE hits > 0
-            ORDER BY hits DESC, publication_date DESC
-            LIMIT :limit
-            """,
-            {**params, "patterns": patterns},
-        )
+    rows = await retrieval.search_changes(ctx.fetch, args.query, limit=args.limit, source=args.source)
     return [
         {
             "cite_as": ctx.cite("regulation", str(r.id), title=r.doc_title, source=r.source,
@@ -248,39 +200,8 @@ class SearchClausesInput(_Input):
 
 
 async def search_contract_clauses(ctx: AgentContext, args: SearchClausesInput) -> list[dict]:
-    vec = await _query_vector(args.query)
-    name_filter = "AND c.name ILIKE :name" if args.contract_name else ""
-    params: dict = {"limit": args.limit, "name": f"%{args.contract_name}%" if args.contract_name else None}
-    if vec is not None:
-        rows = await ctx.fetch(
-            f"""
-            SELECT cc.id, cc.clause_ref, cc.text, c.name, c.area
-            FROM contract_clauses cc JOIN contracts c ON c.id = cc.contract_id
-            WHERE cc.embedding IS NOT NULL {name_filter}
-            ORDER BY cc.embedding <=> CAST(:vec AS vector)
-            LIMIT :limit
-            """,
-            {**params, "vec": str(vec)},
-        )
-    else:
-        patterns = _patterns(args.query)
-        if not patterns:
-            return []
-        rows = await ctx.fetch(
-            f"""
-            SELECT * FROM (
-                SELECT cc.id, cc.clause_ref, cc.text, c.name, c.area,
-                       (SELECT count(*) FROM unnest(CAST(:patterns AS text[])) AS p
-                         WHERE cc.text ILIKE p OR c.name ILIKE p) AS hits
-                FROM contract_clauses cc JOIN contracts c ON c.id = cc.contract_id
-                WHERE true {name_filter}
-            ) ranked
-            WHERE hits > 0
-            ORDER BY hits DESC
-            LIMIT :limit
-            """,
-            {**params, "patterns": patterns},
-        )
+    rows = await retrieval.search_clauses(ctx.fetch, args.query, limit=args.limit,
+                                          contract_name=args.contract_name)
     return [
         {
             "cite_as": ctx.cite("contract", str(r.id), title=r.name, source=r.area or "Internal",

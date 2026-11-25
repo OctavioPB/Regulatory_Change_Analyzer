@@ -4,6 +4,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+from src.services import grounding
 from pydantic import BaseModel, ConfigDict
 
 from src.agents import addendum_team, loop, research_agent
@@ -364,16 +366,50 @@ def test_agent_endpoints_require_analyst(monkeypatch, path):
 
 
 @pytest.mark.asyncio
-async def test_research_agent_empty_answer_is_an_error(monkeypatch):
-    """Seen with gemma in evals: a tool call, then an empty final message reported as done."""
+async def test_research_agent_empty_answer_ends_in_system_refusal(monkeypatch):
+    """Seen with gemma in evals: an empty final message. One correction turn, then the system refuses."""
     monkeypatch.setattr(research_agent.settings, "anthropic_api_key", "sk-test")
+    calls = []
 
-    async def fake_run(**_kw):
-        yield Final("  ", "end_turn", 2, loop.Usage())
+    async def fake_run(**kw):
+        calls.append(kw)
+        yield Final("  ", "end_turn", 2, loop.Usage(), messages=[*kw["messages"],
+                                                                {"role": "assistant", "content": []}])
 
     monkeypatch.setattr(research_agent, "run_agent", fake_run)
-    events = _events(await _collect(research_agent.stream_research("q", AsyncMock())))
-    assert [e["type"] for e in events] == ["error"]
+    events = _events(await _collect(research_agent.stream_research("¿Cuál es el plazo?", AsyncMock())))
+    assert [e["type"] for e in events] == ["reset", "reset", "citations", "token", "done"]
+    assert events[3]["text"] == grounding.REFUSAL_ES
+    assert events[4]["refused"] and events[4]["turns"] == 4
+    retry = calls[1]["messages"]
+    assert retry[-1]["role"] == "user" and "did not write an answer" in retry[-1]["content"]
+    assert all(m["role"] != "assistant" for m in retry)  # the empty assistant turn is dropped
+
+
+@pytest.mark.asyncio
+async def test_research_agent_invalid_citation_gets_one_correction(monkeypatch):
+    monkeypatch.setattr(research_agent.settings, "anthropic_api_key", "sk-test")
+    monkeypatch.setattr(research_agent, "RESEARCH_TOOLS", [ECHO])
+    client = scripted(
+        msg(tool_block("echo", {"word": "aml"}), stop="tool_use"),
+        msg(text_block("Answer [CON-7]")),       # never returned by a tool
+        msg(text_block("Answer [REG-1]")),
+    )
+    with patch.object(loop, "get_client", return_value=client):
+        events = _events(await _collect(research_agent.stream_research("q", AsyncMock())))
+    assert [e["type"] for e in events] == ["step", "step", "token", "reset", "token", "citations", "done"]
+    assert events[-1]["grounded"] and events[-1]["regenerations"] == 1
+    assert "CON-7" in client.calls[2]["messages"][-1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_research_agent_prose_refusal_is_replaced_by_the_system(monkeypatch):
+    monkeypatch.setattr(research_agent.settings, "anthropic_api_key", "sk-test")
+    client = scripted(msg(text_block("The database does not contain information about that.")))
+    with patch.object(loop, "get_client", return_value=client):
+        events = _events(await _collect(research_agent.stream_research("Which fee?", AsyncMock())))
+    assert len(client.calls) == 1
+    assert events[-2]["text"] == grounding.REFUSAL_EN and events[-1]["refused"]
 
 
 def test_addendum_prompt_carries_regulation_text_not_diff_metric():
@@ -387,3 +423,12 @@ def test_addendum_prompt_carries_regulation_text_not_diff_metric():
     prompt = _build_prompt(ctx)
     assert "ratio=" not in prompt and "0.96" not in prompt
     assert "del 10.5% al 12%" in prompt
+
+
+def test_drafting_brief_carries_every_contract_clause():
+    """Evals: gemma's drafter never called get_contract and invented "Clause [X]"."""
+    ctx = _contract("Alpha Loan")
+    ctx.clauses = [("Clause 3.1", "Leverage up to 5x"), ("Clause 8.2", "Automatic adaptation")]
+    brief = addendum_team._drafting_brief(ctx)
+    assert "CURRENT CONTRACT TEXT" in brief
+    assert "Clause 3.1: Leverage up to 5x" in brief and "Clause 8.2: Automatic adaptation" in brief

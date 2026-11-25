@@ -44,6 +44,8 @@ def test_draft_grader_flags_invented_percentages_and_real_clauses():
     g2 = grade_draft(body.replace("15%", "12.5%"), "Loan Agreement", alert, truth)
     assert g2["unsupported_percentages"] == ["12.5"] and not g2["passed"]
     assert not grade_draft(body.replace("12/2025", "the circular"), "Loan Agreement", alert, truth)["passed"]
+    g3 = grade_draft(body.replace("15%", "15.0%"), "Loan Agreement", alert, truth)  # same figure
+    assert g3["unsupported_percentages"] == [] and g3["passed"]
 
 
 def test_pick_alerts_takes_one_alert_per_document():

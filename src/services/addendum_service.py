@@ -71,6 +71,9 @@ class AddendumContext:
     contract_name: str
     contract_area: str | None
     items: list[AddendumItem] = field(default_factory=list)
+    # (clause_ref, text) of the whole contract, loaded by code so the drafter never depends on
+    # deciding to read it (Legal_AI lesson: small models skip the lookup and invent clause numbers)
+    clauses: list[tuple[str, str]] = field(default_factory=list)
 
     @property
     def primary_doc_title(self) -> str:
@@ -118,6 +121,8 @@ async def fetch_context(alert_id: str, db: AsyncSession) -> list[AddendumContext
             regulation_text=row.new_text,
         ))
 
+    for name, clause_ref, clause_text in await _query_clauses(list(groups), db):
+        groups[name].clauses.append((clause_ref or "—", clause_text or ""))
     return list(groups.values())
 
 
@@ -396,6 +401,26 @@ async def _query_items(alert_id: str, db: AsyncSession):
     return result.fetchall()
 
 
+async def _query_clauses(names: list[str], db: AsyncSession) -> list:
+    """Every clause of the named contracts, in clause order."""
+    if not names:
+        return []
+    stmt = text(
+        """
+        SELECT c.name, cc.clause_ref, cc.text
+        FROM contract_clauses cc JOIN contracts c ON c.id = cc.contract_id
+        WHERE c.name = ANY(CAST(:names AS text[]))
+        ORDER BY c.name, cc.clause_ref
+        """
+    )
+    result = await db.execute(stmt, {"names": names})
+    return result.fetchall()
+
+
+_REGULATION_CHARS = 3000   # per change; CNBV articles are a few hundred characters
+_CONTRACT_CHARS = 8000     # whole contract text in the brief, clause by clause
+
+
 _DIFF_METRIC_RE = re.compile(r",?\s*ratio=[\d.]+")
 
 
@@ -434,11 +459,21 @@ def _build_prompt(ctx: AddendumContext) -> str:
         lines.append(f"  Regulatory change: {_clean_summary(item.change_summary)}")
         if item.regulation_text:
             # Without the actual text the model only sees the diff label and invents figures
-            lines.append(f"  Regulatory text (excerpt): {item.regulation_text[:800]}")
+            lines.append(f"  Regulatory text: {item.regulation_text[:_REGULATION_CHARS]}")
         if item.original_clause_text:
             excerpt = item.original_clause_text[:400]
             lines.append(f"  Current clause text (excerpt): {excerpt}")
         lines.append(f"  Required action: {item.suggestion}")
+
+    if ctx.clauses:
+        lines += ["", "CURRENT CONTRACT TEXT (every clause; cite clause numbers exactly as written):"]
+        budget = _CONTRACT_CHARS
+        for ref, body in ctx.clauses:
+            if budget <= 0:
+                lines.append("  [... remaining clauses omitted]")
+                break
+            lines.append(f"  {ref}: {body[:budget]}")
+            budget -= len(body)
 
     lines += [
         "",

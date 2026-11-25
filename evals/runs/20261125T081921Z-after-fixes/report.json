@@ -12,7 +12,8 @@
       "ollama:qwen3:4b-instruct-2507-q4_K_M",
       "ollama:gemma4:26b-a4b-it-qat"
     ],
-    "finished": "2026-11-25T08:34:15+00:00"
+    "finished": "2026-11-25T08:34:15+00:00",
+    "regraded": "2026-11-25T18:03:37+00:00"
   },
   "summary": {
     "ollama:qwen3:4b-instruct-2507-q4_K_M": {
