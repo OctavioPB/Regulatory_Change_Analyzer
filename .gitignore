@@ -59,3 +59,6 @@ Thumbs.db
 
 # Insructions
 .gitignore
+# Test coverage output
+coverage.xml
+.coverage
