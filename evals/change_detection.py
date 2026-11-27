@@ -393,19 +393,19 @@ def markdown(meta: dict, summary: dict, rows: list[dict]) -> str:
     keys = list(next(iter(summary.values())).keys())
     lines += ["| metric | " + " | ".join(summary) + " |", "|---|" + "---|" * len(summary)]
     lines += [f"| {k} | " + " | ".join(str(summary[s][k]) for s in summary) + " |" for k in keys]
-    lines += ["", "## Cases", "",
-              "| case | citation | pass | detected | facts | types (expected) | units R / P (flagged) | "
-              "text flagged / truly changed | regulation_key |",
-              "|---|---|---|---|---|---|---|---|---|"]
+    header = ("| case | citation | pass | detected | facts | types (expected) | units R / P (flagged) | "
+              "text flagged / truly changed | regulation_key |")
+    lines += ["", "## Cases", "", header, "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         rp = f"{r['unit_recall']} / {r['unit_precision']} ({r['units_flagged']})"
         lines.append(
             f"| {r['id']} | {r['citation']} | {'✓' if r['passed'] else '✗'} | {r['detected']} | {r['facts_found']} | "
             f"{', '.join(r['change_types']) or '—'} ({', '.join(r['expected_types']) or 'none'}) | {rp} | "
             f"{r['flagged_share']:.3f} / {r['truly_changed_share']:.3f} | {r['identity']['regulation_key']} |")
-    lines += ["", "*units* = paragraphs (CFR) or articles (Mexican laws) the app flags, against those that "
+    legend = ("*units* = paragraphs (CFR) or articles (Mexican laws) the app flags, against those that "
               "really changed: R = recall, P = precision. *text flagged* = share of the document the app "
-              "reports as changed (what a reviewer must read).", ""]
+              "reports as changed (what a reviewer must read).")
+    lines += ["", legend, ""]
     return "\n".join(lines)
 
 

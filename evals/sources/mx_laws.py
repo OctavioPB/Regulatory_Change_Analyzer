@@ -60,7 +60,7 @@ class MxLawsClient:
                                   transport=transport, follow_redirects=True)
 
     def _get(self, url: str, params: dict | None = None) -> bytes:
-        key = hashlib.sha1((url + repr(sorted((params or {}).items()))).encode()).hexdigest()[:16]
+        key = hashlib.sha256((url + repr(sorted((params or {}).items()))).encode()).hexdigest()[:16]
         path = self.cache_dir / f"{key}.bin"
         if path.exists():
             return path.read_bytes()

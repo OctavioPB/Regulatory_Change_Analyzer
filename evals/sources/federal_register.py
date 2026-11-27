@@ -18,6 +18,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
@@ -52,15 +53,20 @@ class FederalRegisterClient:
         self._http = httpx.Client(headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"},
                                   timeout=90.0, transport=transport, follow_redirects=True)
 
-    def _get(self, url: str, params: list[tuple[str, str]] | dict, *, cache_params: object = None) -> str:
-        # the API key never goes into the cache key (or onto disk)
-        ident = json.dumps(cache_params if cache_params is not None else params, sort_keys=True, default=str)
-        path = self.cache_dir / f"{hashlib.sha1((url + ident).encode()).hexdigest()[:16]}.txt"
+    def _get(self, url: str, params: list[tuple[str, str]] | dict, *, api_key: str | None = None) -> str:
+        # The cache file name is derived from the URL and the public parameters only: the API key is
+        # added to the request afterwards and never reaches the cache key or the disk.
+        ident = json.dumps(params, sort_keys=True, default=str)
+        path = self.cache_dir / f"{hashlib.sha256((url + ident).encode()).hexdigest()[:16]}.txt"
         if path.exists():
             return path.read_text(encoding="utf-8")
-        r = self._http.get(url, params=params)
+        query = list(params.items()) if isinstance(params, dict) else list(params)
+        if api_key:
+            query.append(("api_key", api_key))
+        r = self._http.get(url, params=query)
         r.raise_for_status()
-        if "unblock.federalregister.gov" in str(r.url) or "/error" in str(r.url):
+        final = urlparse(str(r.url))
+        if final.hostname == "unblock.federalregister.gov" or final.path.startswith("/error"):
             raise RuntimeError(f"blocked or error page for {url}")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path.write_text(r.text, encoding="utf-8")
@@ -88,7 +94,7 @@ class FederalRegisterClient:
 
     def full_text(self, doc: FrDocument) -> str:
         url = f"{GOVINFO}/FR-{doc.publication_date}/granules/{doc.document_number}/htm"
-        raw = self._get(url, {"api_key": self.govinfo_key}, cache_params={"doc": doc.document_number})
+        raw = self._get(url, {}, api_key=self.govinfo_key)
         return html.unescape(re.sub(r"<[^>]+>", "", raw))
 
 

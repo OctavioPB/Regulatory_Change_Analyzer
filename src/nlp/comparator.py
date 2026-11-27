@@ -7,7 +7,6 @@ from src.nlp.section_splitter import split_into_sections
 
 logger = logging.getLogger(__name__)
 
-_SIMILARITY_THRESHOLD = 0.02  # kept for callers; sections now compare by words (see _words_differ)
 _WORD_RE = re.compile(r"\w+|[%$€]")
 
 

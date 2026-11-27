@@ -82,7 +82,7 @@ class EcfrClient:
         )
 
     def _get(self, url: str, params: dict) -> str:
-        key = hashlib.sha1((url + json.dumps(params, sort_keys=True)).encode()).hexdigest()[:16]
+        key = hashlib.sha256((url + json.dumps(params, sort_keys=True)).encode()).hexdigest()[:16]
         path = self.cache_dir / f"{key}.txt"
         if path.exists():
             return path.read_text(encoding="utf-8")
