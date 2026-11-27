@@ -41,6 +41,13 @@ def split_into_sections(text: str) -> dict[str, str]:
     """
     matches = list(_HEADER_RE.finditer(text))
 
+    # US federal rules (CFR text) have no "Section N" headers inside a section: their units are
+    # lettered paragraphs "(a)", "(b)"… at the start of a line. Use them when they outnumber the
+    # classic headers, so a one-word amendment is not diluted across the whole section.
+    lettered = _lettered_paragraphs(text)
+    if len(lettered) >= 2 and len(lettered) > len(matches):
+        return _split_lettered(text, lettered)
+
     if not matches:
         logger.debug("No section headers found; treating document as single section")
         return {_FALLBACK_SECTION: text.strip()}
@@ -59,6 +66,39 @@ def split_into_sections(text: str) -> dict[str, str]:
             sections[header] = body
 
     logger.debug("Split into %d sections", len(sections))
+    return sections
+
+
+# "(a) " or "(b)(1) " at the start of a line; nested "(1)", "(i)", "(A)" stay inside their
+# lettered paragraph
+_LETTERED_RE = re.compile(r"(?m)^[ \t]*\(([a-z])\)(?=[ \t(])")
+PREAMBLE_SECTION = "__preamble__"
+
+
+def _lettered_paragraphs(text: str) -> list[re.Match]:
+    """Top-level CFR paragraphs, in sequence: (a), (b), (c)…
+
+    Requiring the next letter tells "(i)" the letter (after "(h)") from "(i)" the roman numeral
+    under "(1)", and ignores lettered lists that do not start at (a).
+    """
+    out: list[re.Match] = []
+    expected = "a"
+    for m in _LETTERED_RE.finditer(text):
+        if m.group(1) == expected:
+            out.append(m)
+            expected = chr(ord(expected) + 1)
+    return out
+
+
+def _split_lettered(text: str, matches: list[re.Match]) -> dict[str, str]:
+    sections: dict[str, str] = {}
+    preamble = text[: matches[0].start()].strip()
+    if len(preamble) >= 20:  # heading / preliminary note: an amendment can change it too
+        sections[PREAMBLE_SECTION] = preamble
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        sections[f"({m.group(1)})"] = text[m.start():end].strip()
+    logger.debug("Split into %d lettered paragraphs", len(matches))
     return sections
 
 

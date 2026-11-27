@@ -41,6 +41,17 @@ Agreement" with Fintech ABC as `[PARTY B]`.
 *Rule:* report what the rule penalises next to the number. Do not loosen a grader to improve a figure
 without deciding that on purpose.
 
+**1.6 Real data finds what synthetic data cannot.** The 3 synthetic circulars passed. On 7 real SEC
+amendments from the eCFR, the change-detection suite found four bugs in its first run (2026-11-27):
+- T+3 → T+2 was missed;
+- every change was flagged as the whole section;
+- a deadline change was typed as a new requirement;
+- SEC documents could never be paired with their previous version.
+
+The ground truth came from the official paragraph labels, independent of the app. Where the Federal
+Register's amendatory instruction lists paragraphs, it agrees with them (Schedule 13D).
+*Rule:* every pipeline change is measured on real amendments as well as on the synthetic demo corpus.
+
 ## 2. Retrieval and embeddings
 
 **2.1 Monolingual embeddings fail silently across languages.** The circulars are Spanish, many questions
@@ -118,6 +129,20 @@ amendments.
 **4.4 Spanish patterns need plural forms.** `fondo de inversión` does not match "fondos de
 inversión". Write `fondos?`, and test each pattern on real wording.
 
+**4.5 Each jurisdiction has its own unit of change.** CNBV circulars are split by "Artículo"; CFR
+sections have no such headers, only lettered paragraphs "(a)", "(b)(1)". Without them, the whole
+section was one block, a one-word amendment fell under the change threshold, and reviewers were
+shown 100% of the text when 20–76% had changed.
+*Rule:* split on the jurisdiction's own unit (lettered paragraphs, in sequence so roman "(i)" is not
+mistaken for the letter). Decide "changed" by words, not by a character ratio.
+
+**4.6 Classify what changed, not what the provision says.** Almost every provision contains
+"shall", "must" or "deberán", so whole-text keywords typed "within 10 days" → "within five business
+days" as a new requirement.
+*Rule:* for modified provisions, classify the edited words with a few words of context. A changed
+amount means limit_modification; a changed period means deadline. Only large rewrites fall back to
+whole-text rules.
+
 ## 5. Engineering
 
 **5.1 Patch where the name is looked up.** A dict of scraper classes captures references at import, so
@@ -172,3 +197,6 @@ see §7.
 | qwen gives up on multi-hop agent questions | 5/9 in every run | Use gemma (or Claude) for the agent; pick a model per task on evidence |
 | Claude never evaluated | No API key configured | Run the same eval with `anthropic:claude-opus-5-5` (billed) |
 | Eval cases not lawyer-reviewed | Developer-written, synthetic corpus | Lawyer review before quoting figures |
+| No real Mexican amendments in the change-detection suite yet | It covers 7 SEC amendments only | Add CNBV resolutions from the DOF (bank rulebook) and the 2025 AML law reform |
+| Lettered-paragraph split needs one paragraph per line | The eCFR loader renders it that way; SEC press releases and PDFs may not | Feed eCFR text for SEC rules, or normalise line breaks at ingestion |
+| Renumbered paragraphs count as modified | T+1: old (b)(2) became (b)(3) | Accept it (the instruction says "revise"), or match moved paragraphs by text |

@@ -36,6 +36,36 @@ Results go to `evals/runs/<timestamp>-<label>/report.{json,md}`; the JSON keeps 
 plus the commit, whether the tree had uncommitted changes, and the retrieval mode. Q&A rows record
 `regenerations` and `system_refusal` (the validator in `src/services/grounding.py`).
 
+## Change detection on real SEC amendments (eCFR)
+
+A separate, offline suite grades the NLP pipeline (diff + classification) on real rule amendments:
+a CFR section the day before an amendment took effect vs the day it did, from the eCFR
+point-in-time API, with the Federal Register rule and its amendatory instruction as evidence.
+
+```bash
+python -m evals.change_detection build   # fetch + freeze fixtures to evals/data/ecfr/ (network; cached in evals/.cache/)
+python -m evals.change_detection run     # grade src.nlp.pipeline.analyze on them (offline)
+```
+
+Cases live in [ecfr_cases.py](ecfr_cases.py): T+1 (2023) and T+2 (2017) settlement, the Marketing Rule
+(2021), Rule 10b5-1 (2023), Schedule 13D/G deadlines (2024), the Names Rule (2023), electronic
+recordkeeping (2023), and two controls with identical text.
+
+- **Ground truth**: which paragraphs changed, aligned by official label ((a), (b)(2)…) — computed
+  without the app's NLP; it matches the Federal Register's own amendatory instruction where that
+  lists paragraphs (e.g. Schedule 13D). Plus verbatim **facts** ("second business day" → "first
+  business day") that must sit on the right side of a reported change; `build` refuses a case whose
+  facts are not in the fetched text.
+- **Metrics**: change detected; controls quiet; facts found; acceptable change type (developer
+  judgment); whether the change is localised below the section; share of the section flagged vs share
+  that really changed; whether the app would pair the two versions at all (`regulation_key`).
+- Results (2026-11-27): the first run passed **7/9**. It missed T+3 → T+2, flagged whole sections,
+  typed a deadline change as a new requirement, and paired 0/9 versions. After the fixes it passes
+  **9/9**: 7/7 detected, 13/13 facts, 7/7 localised, 9/9 paired. Runs are in
+  `evals/runs/*-change-detection-*`.
+- Fixtures are US government works (public domain) and are committed. The Federal Register text
+  comes from the GovInfo API (`GOVINFO_API_KEY`, or the rate-limited public `DEMO_KEY`).
+
 ## Limits
 
 - 9 Q&A cases, 3 alerts for single-call drafting, 1 alert for the team. One case moves a rate by

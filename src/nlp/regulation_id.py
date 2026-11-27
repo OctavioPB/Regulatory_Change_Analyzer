@@ -13,6 +13,8 @@ _NUMBERED = re.compile(
 )
 # "Circular Única de Bancos" (CUB), "Circular Única de Emisoras" — amended in place, no number
 _UNICA = re.compile(r"\bcircular\s+unica\s+de\s+([a-z]+)")
+# US federal rules: "17 CFR 240.15c6-1", "17 C.F.R. § 275.206(4)-1", "17 CFR 240.17Ad-22"
+_CFR = re.compile(r"\b(\d{1,2})\s*c\.?\s*f\.?\s*r\.?\s*(?:§+\s*)?(\d{1,4}\.\d[\w()\-]*)")
 
 
 def _fold(text: str) -> str:
@@ -28,13 +30,15 @@ def regulation_key(title: str) -> str | None:
     is matched to Circular 12/2025 itself.
     """
     folded = _fold(title)
-    numbered = _NUMBERED.search(folded)
-    unica = _UNICA.search(folded)
-    if numbered and (not unica or numbered.start() < unica.start()):
-        return f"circular:{int(numbered.group(1))}/{numbered.group(2)}"
-    if unica:
-        return f"circular-unica:{unica.group(1)}"
-    return None
+    found: list[tuple[int, str]] = []
+    if m := _NUMBERED.search(folded):
+        found.append((m.start(), f"circular:{int(m.group(1))}/{m.group(2)}"))
+    if m := _UNICA.search(folded):
+        found.append((m.start(), f"circular-unica:{m.group(1)}"))
+    if m := _CFR.search(folded):
+        section = m.group(2).rstrip(".,;:-")
+        found.append((m.start(), f"cfr:{int(m.group(1))}:{section}"))
+    return min(found)[1] if found else None
 
 
 def title_prefilter(key: str) -> str:
@@ -42,4 +46,8 @@ def title_prefilter(key: str) -> str:
     if key.startswith("circular:"):
         number, year = key.removeprefix("circular:").split("/")
         return f"%{number}%/%{year}%"
+    if key.startswith("cfr:"):
+        section = key.split(":", 2)[2]
+        # "_" and "%" never occur in CFR section numbers; ILIKE is case-insensitive ("17Ad-22")
+        return f"%{section}%"
     return "%circular%"
