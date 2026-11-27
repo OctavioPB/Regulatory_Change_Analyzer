@@ -1,0 +1,870 @@
+{
+  "meta": {
+    "run_id": "20261127T200750Z-change-detection-mx-after-fixes",
+    "suite": "change_detection (eCFR SEC + DOF Mexico)",
+    "commit": "9bb670a",
+    "dirty": true,
+    "fixtures": 16
+  },
+  "summary": {
+    "all": {
+      "pass": "16/16",
+      "changes_detected": "12/12",
+      "controls_quiet": "4/4",
+      "facts_found": "20/20",
+      "change_type_acceptable": "12/12",
+      "avg_unit_recall": 0.97,
+      "avg_unit_precision": 1.0,
+      "avg_flagged_share": 0.45,
+      "avg_truly_changed_share": 0.36,
+      "versions_paired_by_title": "16/16"
+    },
+    "MX": {
+      "pass": "7/7",
+      "changes_detected": "5/5",
+      "controls_quiet": "2/2",
+      "facts_found": "7/7",
+      "change_type_acceptable": "5/5",
+      "avg_unit_recall": 1.0,
+      "avg_unit_precision": 1.0,
+      "avg_flagged_share": 0.02,
+      "avg_truly_changed_share": 0.02,
+      "versions_paired_by_title": "7/7"
+    },
+    "US": {
+      "pass": "9/9",
+      "changes_detected": "7/7",
+      "controls_quiet": "2/2",
+      "facts_found": "13/13",
+      "change_type_acceptable": "7/7",
+      "avg_unit_recall": 0.96,
+      "avg_unit_precision": 1.0,
+      "avg_flagged_share": 0.76,
+      "avg_truly_changed_share": 0.61,
+      "versions_paired_by_title": "9/9"
+    }
+  },
+  "results": [
+    {
+      "id": "control-reissue-2022",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": "cfr:17:275.206(4)-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "control-stable-15c6-1",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "electronic-records-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.17a-4",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": null,
+          "new": "complete time-stamped audit trail",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "The term designated executive officer means",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(f)",
+        "(i)",
+        "(j)",
+        "(k)"
+      ],
+      "units_expected": [
+        "(f)",
+        "(i)",
+        "(j)",
+        "(k)"
+      ],
+      "units_flagged": 4,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.476,
+      "truly_changed_share": 0.292,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.17a-4 — § 240.17a-4 Records to be preserved by certain exchange members, brokers and dealers.",
+        "regulation_key": "cfr:17:240.17a-4",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "marketing-rule-2021",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "Which refers, directly or indirectly, to any testimonial",
+          "new": null,
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "General prohibitions. An advertisement may not:",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Any hypothetical performance unless the investment adviser",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__preamble__",
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "__preamble__"
+      ],
+      "units_flagged": 6,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.932,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": "cfr:17:275.206(4)-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "names-rule-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 270.35d-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "at least quarterly",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "limit_modification",
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "limit_modification",
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(ii)",
+        "__preamble__"
+      ],
+      "units_flagged": 7,
+      "unit_recall": 0.7,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.997,
+      "truly_changed_share": 0.784,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 270.35d-1 — § 270.35d-1 Investment company names.",
+        "regulation_key": "cfr:17:270.35d-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "rule-10b5-1-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.10b5-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "cooling-off period",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "deadline",
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__preamble__",
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "__preamble__"
+      ],
+      "units_flagged": 4,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.787,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.10b5-1 — § 240.10b5-1 Trading “on the basis of” material nonpublic information in insider trading cases.",
+        "regulation_key": "cfr:17:240.10b5-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "schedule-13d-2024",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.13d-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "within 10 days after the acquisition",
+          "new": "within five business days after the date of the acquisition",
+          "found": true
+        },
+        {
+          "old": "45 days after the end of the calendar year",
+          "new": "45 days after the end of the calendar quarter",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "other"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "other"
+      ],
+      "expected_types": [
+        "deadline"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(j)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(j)"
+      ],
+      "units_flagged": 9,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.85,
+      "truly_changed_share": 0.486,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.13d-1 — § 240.13d-1 Filing of Schedules 13D and 13G.",
+        "regulation_key": "cfr:17:240.13d-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "tplus1-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "later than the second business day",
+          "new": "later than the first business day",
+          "found": true
+        },
+        {
+          "old": "later than the fourth business day",
+          "new": "later than the second business day",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Security-based swaps",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "other"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "other"
+      ],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_flagged": 3,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.761,
+      "truly_changed_share": 0.76,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "tplus2-2017",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "later than the third business day",
+          "new": "later than the second business day",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline"
+      ],
+      "types_on_true_units": [
+        "deadline"
+      ],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)"
+      ],
+      "units_expected": [
+        "(a)"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.202,
+      "truly_changed_share": 0.202,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-cff-improcedencia-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "CFF — DOF 16oct25",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "Que el contribuyente manifieste desconocer",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "types_on_true_units": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 124"
+      ],
+      "units_expected": [
+        "124"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.002,
+      "truly_changed_share": 0.002,
+      "numeric_changes": [],
+      "identity": {
+        "title": "CÓDIGO FISCAL DE LA FEDERACIÓN",
+        "regulation_key": "law:codigo fiscal de la federacion",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-control-lgoaac-2024a",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC (no reform)",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": "law:ley general de organizaciones y actividades auxiliares del credito",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-control-lgoaac-2024b",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC (no reform)",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": "law:ley general de organizaciones y actividades auxiliares del credito",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-lgoaac-almacenes-2024",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC — DOF 26mar24",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "podrán tener en arrendamiento o en habilitación",
+          "new": "podrán tener en arrendamiento, en comodato o en habilitación",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "La Secretaría de Economía deberá determinar mediante disposiciones de carácter general",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 11 bis",
+        "artículo 15",
+        "artículo 17",
+        "artículo 20",
+        "artículo 21",
+        "artículo 22",
+        "artículo 22 bis 1",
+        "artículo 22 bis 6",
+        "artículo 22 bis 7",
+        "artículo 22 bis 8",
+        "artículo 22 bis 9",
+        "artículo 22 bis 12"
+      ],
+      "units_expected": [
+        "11 bis",
+        "15",
+        "17",
+        "20",
+        "21",
+        "22",
+        "22 bis 1",
+        "22 bis 12",
+        "22 bis 6",
+        "22 bis 7",
+        "22 bis 8",
+        "22 bis 9"
+      ],
+      "units_flagged": 12,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.078,
+      "truly_changed_share": 0.079,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": "law:ley general de organizaciones y actividades auxiliares del credito",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-lic-procedimiento-2024",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LIC — DOF 24ene24",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "Protección al Ahorro Bancario, en el ámbito",
+          "new": "Protección al Ahorro Bancario y el Banco de México, en el ámbito",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Las notificaciones, trámite y resolución del recurso de reconsideración se regirán por la Ley del Banco de México",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "clarification",
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 48 bis 1",
+        "artículo 107 bis",
+        "artículo 109 bis 1"
+      ],
+      "units_expected": [
+        "107 bis",
+        "109 bis 1",
+        "48 bis 1"
+      ],
+      "units_flagged": 3,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.015,
+      "truly_changed_share": 0.015,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY DE INSTITUCIONES DE CRÉDITO",
+        "regulation_key": "law:ley de instituciones de credito",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-lmv-homologacion-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LMV — DOF 14nov25",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "Código Federal de Procedimientos Civiles",
+          "new": "Código Nacional de Procedimientos Civiles",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "other"
+      ],
+      "types_on_true_units": [
+        "other"
+      ],
+      "expected_types": [
+        "clarification",
+        "other"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 389"
+      ],
+      "units_expected": [
+        "389"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.002,
+      "truly_changed_share": 0.002,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY DEL MERCADO DE VALORES",
+        "regulation_key": "law:ley del mercado de valores",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-lritf-homologacion-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LRITF — DOF 14nov25",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "Código Federal de Procedimientos Civiles",
+          "new": "Código Nacional de Procedimientos Civiles",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "other"
+      ],
+      "types_on_true_units": [
+        "other"
+      ],
+      "expected_types": [
+        "clarification",
+        "other"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 102"
+      ],
+      "units_expected": [
+        "102"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.005,
+      "truly_changed_share": 0.005,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY PARA REGULAR LAS INSTITUCIONES DE TECNOLOGÍA FINANCIERA",
+        "regulation_key": "law:ley para regular las instituciones de tecnologia financiera",
+        "pairs_versions": true
+      }
+    }
+  ]
+}

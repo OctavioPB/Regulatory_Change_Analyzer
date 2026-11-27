@@ -16,8 +16,10 @@ def _words_differ(old: str, new: str) -> bool:
 
     A character-ratio threshold missed one-word amendments in long provisions: T+3 → T+2 changed
     "third" to "second" in a 500-character paragraph, a ratio under 0.02 (eCFR eval, 2026-11-27).
+    Words are compared with their separators removed, because PDF text layers split words at random
+    ("fo ndo", "Valore s"): on real DOF laws that alone flagged 99 of 100 articles (DOF eval).
     """
-    return _WORD_RE.findall(old.lower()) != _WORD_RE.findall(new.lower())
+    return "".join(_WORD_RE.findall(old.lower())) != "".join(_WORD_RE.findall(new.lower()))
 
 
 @dataclass

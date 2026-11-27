@@ -36,14 +36,14 @@ Results go to `evals/runs/<timestamp>-<label>/report.{json,md}`; the JSON keeps 
 plus the commit, whether the tree had uncommitted changes, and the retrieval mode. Q&A rows record
 `regenerations` and `system_refusal` (the validator in `src/services/grounding.py`).
 
-## Change detection on real SEC amendments (eCFR)
+## Change detection on real amendments (SEC eCFR + Mexican DOF)
 
 A separate, offline suite grades the NLP pipeline (diff + classification) on real rule amendments:
 a CFR section the day before an amendment took effect vs the day it did, from the eCFR
 point-in-time API, with the Federal Register rule and its amendatory instruction as evidence.
 
 ```bash
-python -m evals.change_detection build   # fetch + freeze fixtures to evals/data/ecfr/ (network; cached in evals/.cache/)
+python -m evals.change_detection build   # fetch + freeze fixtures to evals/data/{ecfr,mx}/ (network; cached in evals/.cache/)
 python -m evals.change_detection run     # grade src.nlp.pipeline.analyze on them (offline)
 ```
 
@@ -63,7 +63,23 @@ recordkeeping (2023), and two controls with identical text.
   typed a deadline change as a new requirement, and paired 0/9 versions. After the fixes it passes
   **9/9**: 7/7 detected, 13/13 facts, 7/7 localised, 9/9 paired. Runs are in
   `evals/runs/*-change-detection-*`.
-- Fixtures are US government works (public domain) and are committed. The Federal Register text
+- **Mexico** ([mx_cases.py](mx_cases.py)): five federal-law reforms published in the DOF.
+  - Instituciones de Crédito (2024, administrative procedure)
+  - Organizaciones y Actividades Auxiliares del Crédito (2024, warehouses, 12 articles)
+  - Código Fiscal (2025, art. 124)
+  - Mercado de Valores and Ley Fintech (2025, a one-reference update in laws of 230+ pages)
+  - two controls
+
+  The before/after texts are the Cámara de Diputados consolidated PDFs, archived by the Internet
+  Archive in intervals containing exactly one decree. Page headers, "reformado DOF" notes and decree
+  transitorios are removed. **Ground truth = the decree's own list of amended articles**; it matched
+  the text changes in all five cases. The 2025 AML-law reform is excluded: no archived "before" text.
+- Mexican results (2026-11-27): with a strict pass, at least half of the flagged articles must be
+  real. The first run passed **2/7**, with only the controls passing: PDF word splits and lost "Bis"
+  suffixes flagged 32–173 articles per reform, and 0/7 versions were paired. After the fixes it passes
+  **7/7**, with unit recall and precision 1.0 and 7/7 paired. The whole suite passes **16/16**.
+- Fixtures are public: US government works and Mexican federal law texts. They are committed, the
+  Mexican ones gzipped. The Federal Register text
   comes from the GovInfo API (`GOVINFO_API_KEY`, or the rate-limited public `DEMO_KEY`).
 
 ## Limits

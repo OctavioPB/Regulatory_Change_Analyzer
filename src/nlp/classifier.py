@@ -58,15 +58,24 @@ def classify_modification(old_text: str, new_text: str) -> ChangeType:
     """Classify a modified provision by its edits (plus a few words of context).
 
     Targeted edits: an amount or percentage changed → limit_modification; a time period changed →
-    deadline; otherwise the keyword rules on the edited words. Large rewrites fall back to the
-    whole-text rules.
+    deadline; otherwise the keyword rules on the edited words only — a reference update stays
+    "other" instead of inheriting a "plazo" that the provision always had. Large edits that mostly
+    add text → new_requirement; other large rewrites fall back to the whole-text rules.
     """
     old_tokens = _TOKEN_RE.findall(old_text.lower())
     new_tokens = _TOKEN_RE.findall(new_text.lower())
     edits = [op for op in difflib.SequenceMatcher(None, old_tokens, new_tokens, autojunk=False).get_opcodes()
-             if op[0] != "equal"]
+             if op[0] != "equal"
+             # a word split by the PDF text layer ("fo ndo" → "fondo") is not an edit
+             and "".join(old_tokens[op[1]:op[2]]) != "".join(new_tokens[op[3]:op[4]])]
     changed = sum(max(i2 - i1, j2 - j1) for _, i1, i2, j1, j2 in edits)
-    if not edits or changed > _TARGETED_EDIT:
+    if not edits:
+        return classify_change(new_text + "\n" + old_text)
+    if changed > _TARGETED_EDIT:
+        inserted = sum(j2 - j1 for _, _, _, j1, j2 in edits)
+        deleted = sum(i2 - i1 for _, i1, i2, _, _ in edits)
+        if inserted >= 3 * max(deleted, 1):  # e.g. new fracciones added to an article
+            return ChangeType.new_requirement
         return classify_change(new_text + "\n" + old_text)
 
     core = " ".join(" ".join(old_tokens[i1:i2] + new_tokens[j1:j2]) for _, i1, i2, j1, j2 in edits)
@@ -78,5 +87,4 @@ def classify_modification(old_text: str, new_text: str) -> ChangeType:
         return ChangeType.limit_modification
     if _PERIOD.search(context):
         return ChangeType.deadline
-    by_edit = classify_change(core)
-    return by_edit if by_edit is not ChangeType.other else classify_change(new_text + "\n" + old_text)
+    return classify_change(core)

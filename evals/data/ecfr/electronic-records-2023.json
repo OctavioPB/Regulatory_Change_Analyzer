@@ -1,5 +1,7 @@
 {
  "id": "electronic-records-2023",
+ "jurisdiction": "US",
+ "unit": "paragraph",
  "citation": "17 CFR 240.17a-4",
  "heading": "§ 240.17a-4 Records to be preserved by certain exchange members, brokers and dealers.",
  "note": "Audit-trail alternative to WORM storage; designated executive officer / third party.",

@@ -1,5 +1,7 @@
 {
  "id": "tplus1-2023",
+ "jurisdiction": "US",
+ "unit": "paragraph",
  "citation": "17 CFR 240.15c6-1",
  "heading": "§ 240.15c6-1 Settlement cycle.",
  "note": "T+2 → T+1 (Release 34-96930, compliance date 2024-05-28); firm-commitment T+4 → T+2.",

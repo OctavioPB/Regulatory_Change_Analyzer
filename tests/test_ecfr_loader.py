@@ -123,15 +123,35 @@ def _change(old, new, ctype="deadline", ref="__document__"):
                            section_ref=ref, numeric_changes=[])
 
 
-def test_grader_needs_detection_facts_on_the_right_side_and_an_acceptable_type():
-    fx = _fixture()
+def test_grader_needs_detection_facts_on_the_right_side_type_and_precision():
+    fx = _fixture()  # truly changed units: (a) and (b)
+    before, after = dict(fx["before"]["paragraphs"]), dict(fx["after"]["paragraphs"])
+    a = _change(before["(a)"], after["(a)"], ref="(a)")
+    b = _change(before["(b)(2)"], after["(b)(2)"], ref="(b)")
+    g = grade_case(fx, SimpleNamespace(changes=[a, b]))
+    assert g["passed"] and g["unit_recall"] == 1.0 and g["unit_precision"] == 1.0 and g["localized"]
+    # flagging the whole document finds the change but buries it: precision 0 → fail
     whole = _change(render(fx["before"], fx["heading"]), render(fx["after"], fx["heading"]))
     g = grade_case(fx, SimpleNamespace(changes=[whole]))
-    assert g["passed"] and not g["localized"] and g["flagged_share"] == 1.0 and g["truly_changed_share"] < 1
-    swapped = _change(whole.new_text, whole.old_text)  # fact on the wrong side
-    assert not grade_case(fx, SimpleNamespace(changes=[swapped]))["passed"]
-    assert not grade_case(fx, SimpleNamespace(changes=[_change(whole.old_text, whole.new_text, "other")]))["passed"]
+    assert not g["passed"] and g["flagged_share"] == 1.0 and g["unit_precision"] == 0.0
+    # one false unit out of three is tolerated, a majority of false units is not
+    noise = [_change("x y", "x z", ref=r) for r in ("(c)", "(d)", "(e)")]
+    assert grade_case(fx, SimpleNamespace(changes=[a, b, noise[0]]))["passed"]
+    assert not grade_case(fx, SimpleNamespace(changes=[a, b, *noise]))["passed"]
+    swapped = _change(a.new_text, a.old_text, ref="(a)")  # fact on the wrong side
+    assert not grade_case(fx, SimpleNamespace(changes=[swapped, b]))["passed"]
+    assert not grade_case(fx, SimpleNamespace(changes=[_change(a.old_text, a.new_text, "other", "(a)")]))["passed"]
     assert not grade_case(fx, SimpleNamespace(changes=[]))["passed"]
+
+
+def test_article_refs_map_to_law_article_keys():
+    from evals.change_detection import _unit_of_ref
+
+    assert _unit_of_ref("artículo 107 bis", "article") == "107 bis"
+    assert _unit_of_ref("artículo 8o", "article") == "8"
+    assert _unit_of_ref("artículo 17-h", "article") == "17-h"
+    assert _unit_of_ref("capítulo ii", "article") == "capítulo ii"
+    assert _unit_of_ref("(b)", "paragraph") == "(b)"
 
 
 def test_controls_pass_only_when_nothing_is_reported():

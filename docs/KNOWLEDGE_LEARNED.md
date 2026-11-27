@@ -143,6 +143,23 @@ days" as a new requirement.
 amount means limit_modification; a changed period means deadline. Only large rewrites fall back to
 whole-text rules.
 
+**4.7 PDF text is not the law's text.** On five real DOF reforms (2026-11-27) the app flagged 100,
+173, 64 and 32 articles when 1–12 had changed. Two causes:
+- **Split words.** The text layer splits words at random and differently in each version ("fo ndo",
+  "Valore s"). That alone accounted for 99 of 100 false alerts in the CFF.
+- **Lost suffixes.** Article numbers lost their suffixes ("107 Bis", "17-H"), so variant articles
+  merged into their base article.
+
+After comparing words with their separators removed and keeping the suffixes, every case flags
+exactly the decree's articles.
+*Rule:* treat word splits and line breaks as layout, never as a change. An article's identity
+includes "Bis/Ter…" and "-A". The page headers and "Párrafo reformado DOF…" notes the publisher adds
+are not law.
+
+**4.8 An official decree is the best ground truth.** Each DOF decree lists, per law, the articles it
+amends. In all five cases that list matched the articles whose text changed between the archived
+copies, so the eval's ground truth is official, not inferred.
+
 ## 5. Engineering
 
 **5.1 Patch where the name is looked up.** A dict of scraper classes captures references at import, so
@@ -197,6 +214,7 @@ see §7.
 | qwen gives up on multi-hop agent questions | 5/9 in every run | Use gemma (or Claude) for the agent; pick a model per task on evidence |
 | Claude never evaluated | No API key configured | Run the same eval with `anthropic:claude-opus-5-5` (billed) |
 | Eval cases not lawyer-reviewed | Developer-written, synthetic corpus | Lawyer review before quoting figures |
-| No real Mexican amendments in the change-detection suite yet | It covers 7 SEC amendments only | Add CNBV resolutions from the DOF (bank rulebook) and the 2025 AML law reform |
+| No CNBV rulebook (CUB) resolutions in the change-detection suite | It covers 5 law reforms (LIC, LGOAAC, LMV, Ley Fintech, CFF); the CUB is a ~1,000-page PDF with no archived versions bracketing a single resolution yet | Find archived CUB versions, or build the "after" text from the resolution itself |
+| The 2025 AML-law (LFPIORPI) reform cannot be evaluated | No archived consolidated text exists between the 2021 and 2025 reforms | Keep watching the archive, or reconstruct from the 2021 decree |
 | Lettered-paragraph split needs one paragraph per line | The eCFR loader renders it that way; SEC press releases and PDFs may not | Feed eCFR text for SEC rules, or normalise line breaks at ingestion |
 | Renumbered paragraphs count as modified | T+1: old (b)(2) became (b)(3) | Accept it (the instruction says "revise"), or match moved paragraphs by text |

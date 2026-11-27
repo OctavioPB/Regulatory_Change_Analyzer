@@ -8,13 +8,20 @@ logger = logging.getLogger(__name__)
 _HEADER_RE = re.compile(
     r"(?:^|\n)"
     r"(?P<header>"
-    r"(?:Art[íi]culo|ARTÍCULO|Artículo|Articulo|Article"
+    r"(?:Art[íi]culo|ARTÍCULO|ARTICULO|Artículo|Articulo|Article"
     r"|Secci[oó]n|SECCIÓN|Section"
     r"|Cap[íi]tulo|CAPÍTULO|Chapter"
     r"|Fracción|FRACCIÓN|Fraction"
     r"|Regla|Rule|Paragraph|Párrafo|PÁRRAFO"
     r")\s+"
-    r"(?:\d+[\w\.]*|[IVXivx]+|[A-Z][a-z]+)"  # 5, 5o, 5 Bis, IV, Primero…
+    # 5, 5o, IV, Primero… Mexican laws also number "48 Bis 1", "17-H"; without the suffix every
+    # Bis/letter article merged into its base article (DOF eval: 0 of 3 reformed LIC articles found).
+    # Digits may come apart in PDF text ("2 79").
+    # the letter suffix sits right after the number ("17-H", "87 -D"), never after the ".-" that
+    # opens the text ("Artículo 5.- A partir de…")
+    r"(?:\d(?: ?\d){0,3}(?: ?- ?[A-Z]{1,2}(?![A-Za-záéíóúñ]))?[\w\.]*"
+    r"(?:\s+(?:Bis|BIS|Ter|TER|Qu[áa]ter|Quinquies|Sexies|Septies|Octies|Nonies|Decies)(?:\s*\d{1,2}\b)?)?"
+    r"|[IVXivx]+|[A-Z][a-z]+)"
     r"[o\.\:\-]?"
     r")",
     re.MULTILINE,
@@ -103,5 +110,8 @@ def _split_lettered(text: str, matches: list[re.Match]) -> dict[str, str]:
 
 
 def _normalise_header(header: str) -> str:
-    """Lower-case, collapse whitespace, strip trailing punctuation."""
-    return re.sub(r"\s+", " ", header.strip().lower()).rstrip(".-:")
+    """Lower-case, collapse whitespace, strip trailing punctuation; "2 79" → "279", "17 - H" → "17-h"."""
+    h = re.sub(r"\s+", " ", header.strip().lower())
+    h = re.sub(r"(?<=\d) (?=\d)", "", h)
+    h = re.sub(r"\s*-\s*(?=[a-z]{1,2}\b)", "-", h)
+    return h.rstrip(".-: ")
