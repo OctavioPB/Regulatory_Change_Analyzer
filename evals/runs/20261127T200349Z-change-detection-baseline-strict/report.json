@@ -1,0 +1,1314 @@
+{
+  "meta": {
+    "run_id": "20261127T200349Z-change-detection-baseline-strict",
+    "suite": "change_detection (eCFR SEC + DOF Mexico)",
+    "commit": "9bb670a",
+    "dirty": true,
+    "fixtures": 16
+  },
+  "summary": {
+    "all": {
+      "pass": "11/16",
+      "changes_detected": "12/12",
+      "controls_quiet": "4/4",
+      "facts_found": "20/20",
+      "change_type_acceptable": "9/12",
+      "avg_unit_recall": 0.84,
+      "avg_unit_precision": 0.68,
+      "avg_flagged_share": 0.59,
+      "avg_truly_changed_share": 0.36,
+      "versions_paired_by_title": "9/16"
+    },
+    "MX": {
+      "pass": "2/7",
+      "changes_detected": "5/5",
+      "controls_quiet": "2/2",
+      "facts_found": "7/7",
+      "change_type_acceptable": "2/5",
+      "avg_unit_recall": 0.68,
+      "avg_unit_precision": 0.22,
+      "avg_flagged_share": 0.37,
+      "avg_truly_changed_share": 0.02,
+      "versions_paired_by_title": "0/7"
+    },
+    "US": {
+      "pass": "9/9",
+      "changes_detected": "7/7",
+      "controls_quiet": "2/2",
+      "facts_found": "13/13",
+      "change_type_acceptable": "7/7",
+      "avg_unit_recall": 0.96,
+      "avg_unit_precision": 1.0,
+      "avg_flagged_share": 0.76,
+      "avg_truly_changed_share": 0.61,
+      "versions_paired_by_title": "9/9"
+    }
+  },
+  "results": [
+    {
+      "id": "control-reissue-2022",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": "cfr:17:275.206(4)-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "control-stable-15c6-1",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "electronic-records-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.17a-4",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": null,
+          "new": "complete time-stamped audit trail",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "The term designated executive officer means",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "types_on_true_units": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(f)",
+        "(i)",
+        "(j)",
+        "(k)"
+      ],
+      "units_expected": [
+        "(f)",
+        "(i)",
+        "(j)",
+        "(k)"
+      ],
+      "units_flagged": 4,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.476,
+      "truly_changed_share": 0.292,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.17a-4 — § 240.17a-4 Records to be preserved by certain exchange members, brokers and dealers.",
+        "regulation_key": "cfr:17:240.17a-4",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "marketing-rule-2021",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "Which refers, directly or indirectly, to any testimonial",
+          "new": null,
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "General prohibitions. An advertisement may not:",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Any hypothetical performance unless the investment adviser",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__preamble__",
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "__preamble__"
+      ],
+      "units_flagged": 6,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.932,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": "cfr:17:275.206(4)-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "names-rule-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 270.35d-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "at least quarterly",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "limit_modification",
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "limit_modification",
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(ii)",
+        "__preamble__"
+      ],
+      "units_flagged": 7,
+      "unit_recall": 0.7,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.997,
+      "truly_changed_share": 0.784,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 270.35d-1 — § 270.35d-1 Investment company names.",
+        "regulation_key": "cfr:17:270.35d-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "rule-10b5-1-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.10b5-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "cooling-off period",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement",
+        "other"
+      ],
+      "types_on_true_units": [
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "deadline",
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__preamble__",
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "__preamble__"
+      ],
+      "units_flagged": 4,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.787,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.10b5-1 — § 240.10b5-1 Trading “on the basis of” material nonpublic information in insider trading cases.",
+        "regulation_key": "cfr:17:240.10b5-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "schedule-13d-2024",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.13d-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "within 10 days after the acquisition",
+          "new": "within five business days after the date of the acquisition",
+          "found": true
+        },
+        {
+          "old": "45 days after the end of the calendar year",
+          "new": "45 days after the end of the calendar quarter",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "other"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "other"
+      ],
+      "expected_types": [
+        "deadline"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(j)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)",
+        "(d)",
+        "(e)",
+        "(f)",
+        "(g)",
+        "(i)",
+        "(j)"
+      ],
+      "units_flagged": 9,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.85,
+      "truly_changed_share": 0.486,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.13d-1 — § 240.13d-1 Filing of Schedules 13D and 13G.",
+        "regulation_key": "cfr:17:240.13d-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "tplus1-2023",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "later than the second business day",
+          "new": "later than the first business day",
+          "found": true
+        },
+        {
+          "old": "later than the fourth business day",
+          "new": "later than the second business day",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Security-based swaps",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "limit_modification"
+      ],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_expected": [
+        "(a)",
+        "(b)",
+        "(c)"
+      ],
+      "units_flagged": 3,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.761,
+      "truly_changed_share": 0.76,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "tplus2-2017",
+      "jurisdiction": "US",
+      "unit": "paragraph",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "later than the third business day",
+          "new": "later than the second business day",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline"
+      ],
+      "types_on_true_units": [
+        "deadline"
+      ],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "(a)"
+      ],
+      "units_expected": [
+        "(a)"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.202,
+      "truly_changed_share": 0.202,
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": "cfr:17:240.15c6-1",
+        "pairs_versions": true
+      }
+    },
+    {
+      "id": "mx-cff-improcedencia-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "CFF — DOF 16oct25",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "Que el contribuyente manifieste desconocer",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "clarification",
+        "deadline",
+        "limit_modification",
+        "new_requirement",
+        "other",
+        "repeal"
+      ],
+      "types_on_true_units": [
+        "repeal"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": false,
+      "sections_reported": [
+        "capítulo ii",
+        "artículo 86",
+        "artículo 87",
+        "artículo 88",
+        "artículo 89",
+        "artículo 90",
+        "artículo 91",
+        "artículo 92",
+        "artículo 93",
+        "artículo 96",
+        "artículo 97",
+        "artículo 98",
+        "artículo 99",
+        "artículo 100",
+        "artículo 101",
+        "artículo 102",
+        "artículo 103",
+        "artículo 104",
+        "artículo 105",
+        "artículo 106",
+        "artículo 107",
+        "artículo 108",
+        "artículo 109",
+        "artículo 110",
+        "artículo 111",
+        "artículo 112",
+        "artículo 113",
+        "artículo 114",
+        "artículo 115",
+        "artículo 117",
+        "artículo 121",
+        "artículo 122",
+        "artículo 123",
+        "artículo 124",
+        "artículo 125",
+        "artículo 126",
+        "artículo 127",
+        "artículo 128",
+        "artículo 130",
+        "artículo 132",
+        "artículo 133",
+        "artículo 134",
+        "artículo 135",
+        "artículo 136",
+        "artículo 137",
+        "artículo 138",
+        "artículo 141",
+        "artículo 143",
+        "artículo 144",
+        "artículo 145",
+        "artículo 146",
+        "artículo 147",
+        "artículo 148",
+        "artículo 149",
+        "artículo 150",
+        "artículo 151",
+        "artículo 152",
+        "artículo 153",
+        "artículo 154",
+        "artículo 155",
+        "artículo 156",
+        "artículo 157",
+        "artículo 158",
+        "artículo 159",
+        "artículo 160",
+        "artículo 161",
+        "artículo 162",
+        "artículo 163",
+        "artículo 164",
+        "artículo 165",
+        "artículo 166",
+        "artículo 167",
+        "artículo 169",
+        "artículo 170",
+        "artículo 173",
+        "artículo 192",
+        "artículo 175",
+        "artículo 176",
+        "artículo 177",
+        "artículo 179",
+        "artículo 180",
+        "artículo 181",
+        "artículo 182",
+        "artículo 183",
+        "artículo 184",
+        "artículo 185",
+        "artículo 186",
+        "artículo 187",
+        "artículo 188",
+        "artículo 189",
+        "artículo 191",
+        "artículo 194",
+        "artículo 195",
+        "artículo 196",
+        "artículo 197",
+        "artículo 198",
+        "artículo 199",
+        "artículo 200",
+        "artículo 201",
+        "artículo 202"
+      ],
+      "units_expected": [
+        "124"
+      ],
+      "units_flagged": 100,
+      "unit_recall": 1.0,
+      "unit_precision": 0.01,
+      "false_units": [
+        "100",
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106",
+        "107",
+        "108",
+        "109",
+        "110",
+        "111",
+        "112",
+        "113",
+        "114",
+        "115",
+        "117",
+        "121",
+        "122",
+        "123"
+      ],
+      "localized": true,
+      "flagged_share": 0.289,
+      "truly_changed_share": 0.002,
+      "numeric_changes": [],
+      "identity": {
+        "title": "CÓDIGO FISCAL DE LA FEDERACIÓN",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-control-lgoaac-2024a",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC (no reform)",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-control-lgoaac-2024b",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC (no reform)",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "types_on_true_units": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "units_expected": [],
+      "units_flagged": 0,
+      "unit_recall": null,
+      "unit_precision": null,
+      "false_units": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-lgoaac-almacenes-2024",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LGOAAC — DOF 26mar24",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "podrán tener en arrendamiento o en habilitación",
+          "new": "podrán tener en arrendamiento, en comodato o en habilitación",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "La Secretaría de Economía deberá determinar mediante disposiciones de carácter general",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "new_requirement",
+        "other",
+        "repeal"
+      ],
+      "types_on_true_units": [
+        "deadline",
+        "new_requirement",
+        "other"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 11",
+        "artículo 12",
+        "artículo 13",
+        "artículo 14",
+        "artículo 15",
+        "artículo 16",
+        "artículo 17",
+        "artículo 18",
+        "artículo 19",
+        "artículo 20",
+        "artículo 21",
+        "artículo 22",
+        "artículo 23",
+        "artículo 45",
+        "artículo 46",
+        "artículo 47",
+        "artículo 48",
+        "artículo 49",
+        "artículo 50",
+        "artículo 51",
+        "artículo 52",
+        "artículo 53",
+        "artículo 54",
+        "artículo 55",
+        "artículo 56",
+        "artículo 57",
+        "artículo 58",
+        "artículo 59",
+        "artículo 60",
+        "artículo 61",
+        "artículo 62",
+        "artículo 63",
+        "artículo 64",
+        "artículo 65",
+        "artículo 67",
+        "artículo 68",
+        "artículo 69",
+        "artículo 70",
+        "artículo 71",
+        "artículo 72",
+        "artículo 74",
+        "artículo 76",
+        "artículo 78",
+        "artículo 79",
+        "artículo 81",
+        "artículo 82",
+        "artículo 83",
+        "artículo 84",
+        "artículo 86",
+        "artículo 87",
+        "capítulo iii",
+        "artículo 88",
+        "artículo 89",
+        "artículo 91",
+        "artículo 92",
+        "artículo 93",
+        "artículo 94",
+        "artículo 95",
+        "artículo 96",
+        "artículo 97",
+        "artículo 98",
+        "artículo 99",
+        "artículo 100",
+        "artículo 101"
+      ],
+      "units_expected": [
+        "11 bis",
+        "15",
+        "17",
+        "20",
+        "21",
+        "22",
+        "22 bis 1",
+        "22 bis 12",
+        "22 bis 6",
+        "22 bis 7",
+        "22 bis 8",
+        "22 bis 9"
+      ],
+      "units_flagged": 64,
+      "unit_recall": 0.42,
+      "unit_precision": 0.08,
+      "false_units": [
+        "100",
+        "101",
+        "11",
+        "12",
+        "13",
+        "14",
+        "16",
+        "18",
+        "19",
+        "23",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54"
+      ],
+      "localized": true,
+      "flagged_share": 0.892,
+      "truly_changed_share": 0.079,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY GENERAL DE ORGANIZACIONES Y ACTIVIDADES AUXILIARES DEL CRÉDITO",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-lic-procedimiento-2024",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LIC — DOF 24ene24",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "Protección al Ahorro Bancario, en el ámbito",
+          "new": "Protección al Ahorro Bancario y el Banco de México, en el ámbito",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Las notificaciones, trámite y resolución del recurso de reconsideración se regirán por la Ley del Banco de México",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "clarification",
+        "deadline",
+        "limit_modification",
+        "new_requirement",
+        "other",
+        "repeal"
+      ],
+      "types_on_true_units": [],
+      "expected_types": [
+        "clarification",
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "artículo 11",
+        "capítulo ii",
+        "artículo 48",
+        "artículo 103",
+        "artículo 104",
+        "artículo 105",
+        "artículo 106",
+        "artículo 107",
+        "artículo 108",
+        "artículo 109",
+        "artículo 110",
+        "artículo 111",
+        "artículo 112",
+        "artículo 113",
+        "artículo 114",
+        "artículo 115",
+        "artículo 116",
+        "artículo 117",
+        "artículo 118",
+        "artículo 119",
+        "artículo 120",
+        "artículo 121",
+        "artículo 122",
+        "artículo 123",
+        "artículo 124",
+        "artículo 125",
+        "artículo 126",
+        "artículo 127",
+        "artículo 128",
+        "artículo 129",
+        "artículo 130",
+        "artículo 131",
+        "artículo 132",
+        "artículo 133",
+        "artículo 134",
+        "artículo 135",
+        "artículo 136",
+        "artículo 138",
+        "artículo 139",
+        "artículo 140",
+        "artículo 141",
+        "artículo 142",
+        "artículo 143",
+        "artículo 144",
+        "artículo 145",
+        "artículo 146",
+        "artículo 147",
+        "artículo 148",
+        "artículo 149",
+        "artículo 150",
+        "artículo 151",
+        "artículo 152",
+        "artículo 153",
+        "artículo 154",
+        "artículo 155",
+        "artículo 156",
+        "artículo 157",
+        "artículo 158",
+        "artículo 159",
+        "artículo 160",
+        "artículo 161",
+        "artículo 162",
+        "artículo 163",
+        "artículo 165",
+        "artículo 166",
+        "artículo 167",
+        "artículo 168",
+        "artículo 169",
+        "artículo 170",
+        "artículo 172",
+        "artículo 173",
+        "artículo 174",
+        "artículo 175",
+        "artículo 176",
+        "artículo 177",
+        "artículo 178",
+        "artículo 179",
+        "artículo 180",
+        "artículo 181",
+        "artículo 182",
+        "artículo 184",
+        "artículo 185",
+        "artículo 186",
+        "artículo 187",
+        "artículo 188",
+        "artículo 189",
+        "artículo 190",
+        "artículo 191",
+        "artículo 192",
+        "artículo 193",
+        "artículo 194",
+        "artículo 195",
+        "artículo 196",
+        "artículo 197",
+        "artículo 198",
+        "artículo 200",
+        "artículo 201",
+        "artículo 202",
+        "artículo 203",
+        "artículo 204",
+        "artículo 205",
+        "artículo 206",
+        "artículo 207",
+        "artículo 208",
+        "artículo 209",
+        "artículo 210",
+        "artículo 211",
+        "artículo 213",
+        "artículo 215",
+        "artículo 216",
+        "artículo 217",
+        "artículo 218",
+        "artículo 219",
+        "artículo 220",
+        "artículo 221",
+        "artículo 222",
+        "artículo 223",
+        "artículo 224",
+        "artículo 225",
+        "artículo 226",
+        "artículo 228",
+        "artículo 229",
+        "artículo 230",
+        "artículo 231",
+        "artículo 232",
+        "artículo 233",
+        "artículo 234",
+        "artículo 235",
+        "artículo 236",
+        "artículo 237",
+        "artículo 238",
+        "artículo 239",
+        "artículo 240",
+        "artículo 241",
+        "artículo 242",
+        "artículo 243",
+        "artículo 244",
+        "artículo 245",
+        "artículo 246",
+        "artículo 247",
+        "artículo 248",
+        "artículo 249",
+        "artículo 250",
+        "artículo 251",
+        "artículo 252",
+        "artículo 253",
+        "artículo 254",
+        "artículo 255",
+        "artículo 256",
+        "artículo 257",
+        "artículo 258",
+        "artículo 259",
+        "artículo 260",
+        "artículo 261",
+        "artículo 262",
+        "artículo 263",
+        "artículo 264",
+        "artículo 265",
+        "artículo 266",
+        "artículo 267",
+        "artículo 268",
+        "artículo 269",
+        "artículo 270",
+        "artículo 271",
+        "artículo 272",
+        "artículo 273",
+        "artículo 274",
+        "artículo 275",
+        "artículo 276",
+        "artículo 278",
+        "artículo 2",
+        "artículo 281",
+        "artículo 279"
+      ],
+      "units_expected": [
+        "107 bis",
+        "109 bis 1",
+        "48 bis 1"
+      ],
+      "units_flagged": 173,
+      "unit_recall": 0.0,
+      "unit_precision": 0.0,
+      "false_units": [
+        "103",
+        "104",
+        "105",
+        "106",
+        "107",
+        "108",
+        "109",
+        "11",
+        "110",
+        "111",
+        "112",
+        "113",
+        "114",
+        "115",
+        "116",
+        "117",
+        "118",
+        "119",
+        "120",
+        "121"
+      ],
+      "localized": true,
+      "flagged_share": 0.526,
+      "truly_changed_share": 0.015,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY DE INSTITUCIONES DE CRÉDITO",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-lmv-homologacion-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LMV — DOF 14nov25",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "Código Federal de Procedimientos Civiles",
+          "new": "Código Nacional de Procedimientos Civiles",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline",
+        "new_requirement",
+        "other",
+        "repeal"
+      ],
+      "types_on_true_units": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "clarification",
+        "other"
+      ],
+      "type_ok": false,
+      "sections_reported": [
+        "artículo 389",
+        "artículo 390",
+        "artículo 391",
+        "artículo 392",
+        "artículo 393",
+        "artículo 394",
+        "artículo 395",
+        "artículo 396",
+        "artículo 397",
+        "artículo 398",
+        "artículo 399",
+        "artículo 400",
+        "artículo 401",
+        "artículo 402",
+        "artículo 403",
+        "artículo 404",
+        "artículo 405",
+        "artículo 406",
+        "artículo 407",
+        "artículo 410",
+        "artículo 411",
+        "artículo 412",
+        "artículo 413",
+        "artículo 414",
+        "artículo 415",
+        "artículo 416",
+        "artículo 417",
+        "artículo 419",
+        "artículo 420",
+        "artículo 421",
+        "artículo 422",
+        "artículo 423"
+      ],
+      "units_expected": [
+        "389"
+      ],
+      "units_flagged": 32,
+      "unit_recall": 1.0,
+      "unit_precision": 0.03,
+      "false_units": [
+        "390",
+        "391",
+        "392",
+        "393",
+        "394",
+        "395",
+        "396",
+        "397",
+        "398",
+        "399",
+        "400",
+        "401",
+        "402",
+        "403",
+        "404",
+        "405",
+        "406",
+        "407",
+        "410",
+        "411"
+      ],
+      "localized": true,
+      "flagged_share": 0.12,
+      "truly_changed_share": 0.002,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY DEL MERCADO DE VALORES",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "mx-lritf-homologacion-2025",
+      "jurisdiction": "MX",
+      "unit": "article",
+      "citation": "LRITF — DOF 14nov25",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": "Código Federal de Procedimientos Civiles",
+          "new": "Código Nacional de Procedimientos Civiles",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "deadline"
+      ],
+      "types_on_true_units": [
+        "deadline"
+      ],
+      "expected_types": [
+        "clarification",
+        "other"
+      ],
+      "type_ok": false,
+      "sections_reported": [
+        "artículo 102"
+      ],
+      "units_expected": [
+        "102"
+      ],
+      "units_flagged": 1,
+      "unit_recall": 1.0,
+      "unit_precision": 1.0,
+      "false_units": [],
+      "localized": true,
+      "flagged_share": 0.005,
+      "truly_changed_share": 0.005,
+      "numeric_changes": [],
+      "identity": {
+        "title": "LEY PARA REGULAR LAS INSTITUCIONES DE TECNOLOGÍA FINANCIERA",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    }
+  ]
+}

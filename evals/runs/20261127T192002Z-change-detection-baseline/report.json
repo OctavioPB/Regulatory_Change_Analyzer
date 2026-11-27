@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "run_id": "20261127T192002Z-change-detection-baseline",
+    "suite": "change_detection (eCFR, SEC)",
+    "commit": "db55ea1",
+    "dirty": true,
+    "fixtures": 9
+  },
+  "summary": {
+    "pass": "7/9",
+    "changes_detected": "6/7",
+    "controls_quiet": "2/2",
+    "facts_found": "12/13",
+    "change_type_acceptable": "5/7",
+    "localized_below_section": "0/7",
+    "avg_flagged_share": 0.86,
+    "avg_truly_changed_share": 0.61,
+    "versions_paired_by_title": "0/9"
+  },
+  "results": [
+    {
+      "id": "control-reissue-2022",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "truth_paragraphs": {
+        "added": 0,
+        "removed": 0,
+        "modified": 0
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "control-stable-15c6-1",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": false,
+      "passed": true,
+      "detected": false,
+      "facts_found": "0/0",
+      "facts": [],
+      "change_types": [],
+      "expected_types": [],
+      "type_ok": true,
+      "sections_reported": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.0,
+      "truth_paragraphs": {
+        "added": 0,
+        "removed": 0,
+        "modified": 0
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "electronic-records-2023",
+      "citation": "17 CFR 240.17a-4",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": null,
+          "new": "complete time-stamped audit trail",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "The term designated executive officer means",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.29,
+      "truth_paragraphs": {
+        "added": 30,
+        "removed": 16,
+        "modified": 9
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.17a-4 — § 240.17a-4 Records to be preserved by certain exchange members, brokers and dealers.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "marketing-rule-2021",
+      "citation": "17 CFR 275.206(4)-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "Which refers, directly or indirectly, to any testimonial",
+          "new": null,
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "General prohibitions. An advertisement may not:",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Any hypothetical performance unless the investment adviser",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.93,
+      "truth_paragraphs": {
+        "added": 101,
+        "removed": 0,
+        "modified": 7
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 275.206(4)-1 — § 275.206(4)-1 Investment adviser marketing.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "names-rule-2023",
+      "citation": "17 CFR 270.35d-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "at least quarterly",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.78,
+      "truth_paragraphs": {
+        "added": 18,
+        "removed": 7,
+        "modified": 12
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 270.35d-1 — § 270.35d-1 Investment company names.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "rule-10b5-1-2023",
+      "citation": "17 CFR 240.10b5-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "1/1",
+      "facts": [
+        {
+          "old": null,
+          "new": "cooling-off period",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "deadline",
+        "new_requirement"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.79,
+      "truth_paragraphs": {
+        "added": 21,
+        "removed": 8,
+        "modified": 4
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.10b5-1 — § 240.10b5-1 Trading “on the basis of” material nonpublic information in insider trading cases.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "schedule-13d-2024",
+      "citation": "17 CFR 240.13d-1",
+      "substantive": true,
+      "passed": false,
+      "detected": true,
+      "facts_found": "2/2",
+      "facts": [
+        {
+          "old": "within 10 days after the acquisition",
+          "new": "within five business days after the date of the acquisition",
+          "found": true
+        },
+        {
+          "old": "45 days after the end of the calendar year",
+          "new": "45 days after the end of the calendar quarter",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "new_requirement"
+      ],
+      "expected_types": [
+        "deadline"
+      ],
+      "type_ok": false,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.49,
+      "truth_paragraphs": {
+        "added": 2,
+        "removed": 1,
+        "modified": 11
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.13d-1 — § 240.13d-1 Filing of Schedules 13D and 13G.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "tplus1-2023",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": true,
+      "detected": true,
+      "facts_found": "3/3",
+      "facts": [
+        {
+          "old": "later than the second business day",
+          "new": "later than the first business day",
+          "found": true
+        },
+        {
+          "old": "later than the fourth business day",
+          "new": "later than the second business day",
+          "found": true
+        },
+        {
+          "old": null,
+          "new": "Security-based swaps",
+          "found": true
+        }
+      ],
+      "change_types": [
+        "limit_modification"
+      ],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": true,
+      "sections_reported": [
+        "__document__"
+      ],
+      "localized": false,
+      "flagged_share": 1.0,
+      "truly_changed_share": 0.76,
+      "truth_paragraphs": {
+        "added": 1,
+        "removed": 0,
+        "modified": 5
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    },
+    {
+      "id": "tplus2-2017",
+      "citation": "17 CFR 240.15c6-1",
+      "substantive": true,
+      "passed": false,
+      "detected": false,
+      "facts_found": "0/1",
+      "facts": [
+        {
+          "old": "later than the third business day",
+          "new": "later than the second business day",
+          "found": false
+        }
+      ],
+      "change_types": [],
+      "expected_types": [
+        "deadline",
+        "limit_modification"
+      ],
+      "type_ok": false,
+      "sections_reported": [],
+      "localized": false,
+      "flagged_share": 0.0,
+      "truly_changed_share": 0.2,
+      "truth_paragraphs": {
+        "added": 0,
+        "removed": 0,
+        "modified": 1
+      },
+      "numeric_changes": [],
+      "identity": {
+        "title": "17 CFR 240.15c6-1 — § 240.15c6-1 Settlement cycle.",
+        "regulation_key": null,
+        "pairs_versions": false
+      }
+    }
+  ]
+}

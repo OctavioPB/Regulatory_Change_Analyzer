@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass, field
 
 from src.models.document import ChangeType
-from src.nlp.classifier import classify_change
+from src.nlp.classifier import classify_change, classify_modification
 from src.nlp.comparator import SectionDiff, compare_sections
 from src.nlp.extractor import ExtractedEntities, NumericChange, extract_entities, extract_numeric_changes
 
@@ -135,6 +135,8 @@ def _classify_with_context(diff: SectionDiff) -> ChangeType:
     # Use old_text hint: if old had content and new has nothing, it's a repeal
     if diff.is_deleted:
         return ChangeType.repeal
+    if diff.is_modified and diff.old_text and diff.new_text:
+        return classify_modification(diff.old_text, diff.new_text)
 
     text = (diff.new_text or "") + "\n" + (diff.old_text or "")
     return classify_change(text)

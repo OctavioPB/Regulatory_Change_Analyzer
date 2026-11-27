@@ -62,3 +62,6 @@ Thumbs.db
 # Test coverage output
 coverage.xml
 .coverage
+
+# Eval download cache (eCFR, Federal Register)
+evals/.cache/

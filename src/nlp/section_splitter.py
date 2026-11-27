@@ -8,13 +8,20 @@ logger = logging.getLogger(__name__)
 _HEADER_RE = re.compile(
     r"(?:^|\n)"
     r"(?P<header>"
-    r"(?:Art[íi]culo|ARTÍCULO|Artículo|Articulo|Article"
+    r"(?:Art[íi]culo|ARTÍCULO|ARTICULO|Artículo|Articulo|Article"
     r"|Secci[oó]n|SECCIÓN|Section"
     r"|Cap[íi]tulo|CAPÍTULO|Chapter"
     r"|Fracción|FRACCIÓN|Fraction"
     r"|Regla|Rule|Paragraph|Párrafo|PÁRRAFO"
     r")\s+"
-    r"(?:\d+[\w\.]*|[IVXivx]+|[A-Z][a-z]+)"  # 5, 5o, 5 Bis, IV, Primero…
+    # 5, 5o, IV, Primero… Mexican laws also number "48 Bis 1", "17-H"; without the suffix every
+    # Bis/letter article merged into its base article (DOF eval: 0 of 3 reformed LIC articles found).
+    # Digits may come apart in PDF text ("2 79").
+    # the letter suffix sits right after the number ("17-H", "87 -D"), never after the ".-" that
+    # opens the text ("Artículo 5.- A partir de…")
+    r"(?:\d(?: ?\d){0,3}(?: ?- ?[A-Z]{1,2}(?![A-Za-záéíóúñ]))?[\w\.]*"
+    r"(?:\s+(?:Bis|BIS|Ter|TER|Qu[áa]ter|Quinquies|Sexies|Septies|Octies|Nonies|Decies)(?:\s*\d{1,2}\b)?)?"
+    r"|[IVXivx]+|[A-Z][a-z]+)"
     r"[o\.\:\-]?"
     r")",
     re.MULTILINE,
@@ -41,6 +48,13 @@ def split_into_sections(text: str) -> dict[str, str]:
     """
     matches = list(_HEADER_RE.finditer(text))
 
+    # US federal rules (CFR text) have no "Section N" headers inside a section: their units are
+    # lettered paragraphs "(a)", "(b)"… at the start of a line. Use them when they outnumber the
+    # classic headers, so a one-word amendment is not diluted across the whole section.
+    lettered = _lettered_paragraphs(text)
+    if len(lettered) >= 2 and len(lettered) > len(matches):
+        return _split_lettered(text, lettered)
+
     if not matches:
         logger.debug("No section headers found; treating document as single section")
         return {_FALLBACK_SECTION: text.strip()}
@@ -62,6 +76,42 @@ def split_into_sections(text: str) -> dict[str, str]:
     return sections
 
 
+# "(a) " or "(b)(1) " at the start of a line; nested "(1)", "(i)", "(A)" stay inside their
+# lettered paragraph
+_LETTERED_RE = re.compile(r"(?m)^[ \t]*\(([a-z])\)(?=[ \t(])")
+PREAMBLE_SECTION = "__preamble__"
+
+
+def _lettered_paragraphs(text: str) -> list[re.Match]:
+    """Top-level CFR paragraphs, in sequence: (a), (b), (c)…
+
+    Requiring the next letter tells "(i)" the letter (after "(h)") from "(i)" the roman numeral
+    under "(1)", and ignores lettered lists that do not start at (a).
+    """
+    out: list[re.Match] = []
+    expected = "a"
+    for m in _LETTERED_RE.finditer(text):
+        if m.group(1) == expected:
+            out.append(m)
+            expected = chr(ord(expected) + 1)
+    return out
+
+
+def _split_lettered(text: str, matches: list[re.Match]) -> dict[str, str]:
+    sections: dict[str, str] = {}
+    preamble = text[: matches[0].start()].strip()
+    if len(preamble) >= 20:  # heading / preliminary note: an amendment can change it too
+        sections[PREAMBLE_SECTION] = preamble
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        sections[f"({m.group(1)})"] = text[m.start():end].strip()
+    logger.debug("Split into %d lettered paragraphs", len(matches))
+    return sections
+
+
 def _normalise_header(header: str) -> str:
-    """Lower-case, collapse whitespace, strip trailing punctuation."""
-    return re.sub(r"\s+", " ", header.strip().lower()).rstrip(".-:")
+    """Lower-case, collapse whitespace, strip trailing punctuation; "2 79" → "279", "17 - H" → "17-h"."""
+    h = re.sub(r"\s+", " ", header.strip().lower())
+    h = re.sub(r"(?<=\d) (?=\d)", "", h)
+    h = re.sub(r"\s*-\s*(?=[a-z]{1,2}\b)", "-", h)
+    return h.rstrip(".-: ")

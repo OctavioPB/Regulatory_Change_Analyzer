@@ -1,12 +1,24 @@
 import difflib
 import logging
+import re
 from dataclasses import dataclass
 
 from src.nlp.section_splitter import split_into_sections
 
 logger = logging.getLogger(__name__)
 
-_SIMILARITY_THRESHOLD = 0.02  # detect even single-word changes (e.g. 20% → 15%)
+_WORD_RE = re.compile(r"\w+|[%$€]")
+
+
+def _words_differ(old: str, new: str) -> bool:
+    """True when the wording changed; spacing, punctuation and line breaks alone do not count.
+
+    A character-ratio threshold missed one-word amendments in long provisions: T+3 → T+2 changed
+    "third" to "second" in a 500-character paragraph, a ratio under 0.02 (eCFR eval, 2026-11-27).
+    Words are compared with their separators removed, because PDF text layers split words at random
+    ("fo ndo", "Valore s"): on real DOF laws that alone flagged 99 of 100 articles (DOF eval).
+    """
+    return "".join(_WORD_RE.findall(old.lower())) != "".join(_WORD_RE.findall(new.lower()))
 
 
 @dataclass
@@ -96,8 +108,8 @@ def compare_sections(old_text: str, new_text: str) -> list[SectionDiff]:
             ))
         else:
             old_body = old_sections[key]
-            ratio = 1.0 - difflib.SequenceMatcher(None, old_body, new_body).ratio()
-            if ratio > _SIMILARITY_THRESHOLD:
+            if _words_differ(old_body, new_body):
+                ratio = 1.0 - difflib.SequenceMatcher(None, old_body, new_body).ratio()
                 diffs.append(SectionDiff(
                     section_ref=key,
                     old_text=old_body,
